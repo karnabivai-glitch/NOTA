@@ -199,7 +199,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
   getFirestore, collection, addDoc,
-  onSnapshot, doc, getDoc, updateDoc
+  onSnapshot, doc, getDoc, updateDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // 🔥 GANTI CONFIG
@@ -316,10 +316,16 @@ onSnapshot(collection(db,"NOTA"), snap=>{
   snap.forEach(d=>{
     const data=d.data();
     html+=`
-    <div class="history-item" onclick="loadNota('${d.id}')">
-      Rp ${rupiah(data.total)}<br>
-      <small>${new Date(data.tanggal.seconds*1000).toLocaleString()}</small>
-    </div>`;
+<div class="history-item">
+  <div onclick="loadNota('${d.id}')">
+    Rp ${rupiah(data.total)}<br>
+    <small>${new Date(data.tanggal.seconds*1000).toLocaleString()}</small>
+  </div>
+  <div style="color:red; font-size:12px; margin-top:5px;"
+       onclick="hapusNota('${d.id}')">
+    🗑 Hapus
+  </div>
+</div>`;
   });
   document.getElementById("riwayat").innerHTML=html;
 });
@@ -384,6 +390,14 @@ window.screenshot = function(){
     a.click();
     div.remove();
   });
+};
+
+// HAPUS NOTA
+window.hapusNota = async function(id){
+  if(confirm("Hapus nota ini?")){
+    await deleteDoc(doc(db,"NOTA",id));
+    alert("Nota dihapus");
+  }
 };
 
 </script>
