@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Nota Clean UI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin:0;
+      font-family: 'Segoe UI', sans-serif;
+      background:#f4f6f8;
+    }
+
+    .app {
+      max-width:480px;
+      margin:auto;
+      padding-bottom:90px;
+    }
+
+    .header {
+      position:sticky;
+      top:0;
+      background:#2ecc71;
+      color:white;
+      text-align:center;
+      padding:14px;
+      font-weight:bold;
+      font-size:18px;
+      z-index:10;
+    }
+
+    .card {
+      background:white;
+      margin:10px;
+      padding:12px;
+      border-radius:12px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    .grid {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    .full { grid-column: span 2; }
+
+    input {
+      width:100%;
+      padding:10px;
+      border-radius:8px;
+      border:1px solid #ddd;
+      font-size:14px;
+    }
+
+    table {
+      width:100%;
+      border-collapse:collapse;
+      font-size:13px;
+      text-align:center;
+    }
+
+    th, td {
+      padding:8px;
+      border-bottom:1px solid #eee;
+    }
+
+    th {
+      color:#888;
+      font-weight:500;
+    }
+
+    .aksi {
+      cursor:pointer;
+      font-size:12px;
+      color:#e74c3c;
+    }
+
+    .edit { color:#3498db; }
+
+    .total {
+      display:flex;
+      justify-content:space-between;
+      margin-top:10px;
+      font-weight:bold;
+      font-size:15px;
+    }
+
+    .history {
+      padding:10px;
+    }
+
+    .history-item {
+      background:white;
+      padding:10px;
+      margin:5px 10px;
+      border-radius:8px;
+      cursor:pointer;
+    }
+
+    .bottom {
+      position:fixed;
+      bottom:0;
+      left:0;
+      right:0;
+      display:flex;
+      justify-content:center;
+    }
+
+    .bottom-inner {
+      max-width:480px;
+      width:100%;
+      background:white;
+      padding:10px;
+      display:flex;
+      gap:8px;
+      box-shadow:0 -2px 10px rgba(0,0,0,0.1);
+    }
+
+    button {
+      flex:1;
+      padding:10px;
+      border:none;
+      border-radius:8px;
+      font-size:13px;
+      color:white;
+      cursor:pointer;
+    }
+
+    .add { background:#27ae60; }
+    .save { background:#2980b9; }
+    .reset { background:#e74c3c; }
+    .shot { background:#8e44ad; }
+
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <div class="header">🧾 Nota Penjualan</div>
+
+  <div class="card">
+    <div class="grid">
+      <input id="nama" class="full" placeholder="Nama barang">
+      <input id="qty" type="number" placeholder="Qty">
+      <input id="harga" type="number" placeholder="Harga">
+    </div>
+  </div>
+
+  <div class="card" id="nota">
+    <table>
+      <thead>
+        <tr>
+          <th>No</th>
+          <th style="text-align:left;">Item</th>
+          <th>Qty</th>
+          <th>Harga</th> <!-- ✅ tambahan -->
+          <th>Total</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="list"></tbody>
+    </table>
+
+    <div class="total">
+  <span>Total</span>
+  <span>Rp <span id="total">0</span></span>
+</div>
+
+<div class="total">
+  <span>Total Qty</span>
+  <span><span id="totalQty">0</span></span>
+</div>
+
+  <div class="history">
+    <h3>📂 Riwayat Nota</h3>
+    <div id="riwayat"></div>
+  </div>
+
+</div>
+
+<div class="bottom">
+  <div class="bottom-inner">
+    <button class="add" onclick="tambah()">+ Item</button>
+    <button class="save" onclick="simpan()">💾</button>
+    <button class="reset" onclick="resetForm()">🗑</button>
+    <button class="shot" onclick="screenshot()">📸</button>
+  </div>
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getFirestore, collection, addDoc,
+  onSnapshot, doc, getDoc, updateDoc
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// 🔥 GANTI CONFIG
+const firebaseConfig = {
+  apiKey: "AIzaSyDDjVLDiNYccKZd05l7WPiNMaz8Ri3N2rk",
+  authDomain: "test-4dfeb.firebaseapp.com",
+  projectId: "test-4dfeb"
+}; // 🔥 WAJIB ADA INI
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let items = [];
+let editId = null;
+
+function rupiah(x){ return x.toLocaleString("id-ID"); }
+
+const namaEl = document.getElementById("nama");
+const qtyEl = document.getElementById("qty");
+const hargaEl = document.getElementById("harga");
+
+// TAMBAH
+window.tambah = function(){
+  const nama = namaEl.value;
+  const qty = Number(qtyEl.value);
+  const harga = Number(hargaEl.value);
+
+  if(!nama || !qty || !harga) return alert("Isi semua!");
+
+  items.push({nama, qty, harga, total: qty*harga});
+  render();
+
+  namaEl.value=""; qtyEl.value=""; hargaEl.value="";
+};
+
+// RENDER
+function render(){
+  let html="", total=0, totalQty=0;
+
+  items.forEach((i,idx)=>{
+    total += i.total;
+    totalQty += i.qty;
+
+    html+=`
+    <tr>
+      <td>${idx+1}</td>
+      <td style="text-align:left;">${i.nama}</td>
+      <td>${i.qty}</td>
+      <td>${rupiah(i.harga)}</td>
+      <td>${rupiah(i.total)}</td>
+      <td>
+        <span class="aksi edit" onclick="editItem(${idx})">Edit</span> |
+        <span class="aksi" onclick="hapusItem(${idx})">Hapus</span>
+      </td>
+    </tr>`;
+  });
+
+  document.getElementById("list").innerHTML = html;
+  document.getElementById("total").innerText = rupiah(total);
+  document.getElementById("totalQty").innerText = totalQty; // ✅ tambahan
+}
+
+// EDIT
+window.editItem = function(i){
+  const item = items[i];
+  const qty = prompt("Qty:", item.qty);
+  const harga = prompt("Harga:", item.harga);
+
+  if(!qty || !harga) return;
+
+  item.qty=Number(qty);
+  item.harga=Number(harga);
+  item.total=item.qty*item.harga;
+
+  render();
+};
+
+// HAPUS
+window.hapusItem = function(i){
+  if(confirm("Hapus item?")){
+    items.splice(i,1);
+    render();
+  }
+};
+
+// RESET
+window.resetForm = function(){
+  items=[]; editId=null;
+  render();
+};
+
+// SIMPAN
+window.simpan = async function(){
+  if(items.length==0) return alert("Kosong!");
+
+  let total = items.reduce((a,b)=>a+b.total,0);
+
+  if(editId){
+    await updateDoc(doc(db,"NOTA",editId),{items,total});
+    alert("Update berhasil");
+  } else {
+    await addDoc(collection(db,"NOTA"),{
+      items,total,tanggal:new Date()
+    });
+    alert("Tersimpan");
+  }
+
+  resetForm();
+};
+
+// RIWAYAT
+onSnapshot(collection(db,"NOTA"), snap=>{
+  let html="";
+  snap.forEach(d=>{
+    const data=d.data();
+    html+=`
+    <div class="history-item" onclick="loadNota('${d.id}')">
+      Rp ${rupiah(data.total)}<br>
+      <small>${new Date(data.tanggal.seconds*1000).toLocaleString()}</small>
+    </div>`;
+  });
+  document.getElementById("riwayat").innerHTML=html;
+});
+
+// LOAD
+window.loadNota = async function(id){
+  const snap = await getDoc(doc(db,"NOTA",id));
+  if(snap.exists()){
+    items = snap.data().items;
+    editId = id;
+    render();
+  }
+};
+
+// SCREENSHOT
+window.screenshot = function(){
+
+  let total = items.reduce((a,b)=>a+b.total,0);
+  let now = new Date();
+
+  let html=`
+  <div style="background:white;padding:15px;font-size:13px;width:380px">
+    <center><b>Bakso Aselihills</b></center>
+    <center>${now.toLocaleString()}</center>
+    <hr>
+    <table style="width:100%;font-size:12px">
+      <tr>
+  <th>No</th>
+  <th>Item</th>
+  <th>Qty</th>
+  <th>Harga</th>
+  <th>Total</th>
+</tr>
+  `;
+
+  items.forEach((i, index)=>{
+  html+=`<tr>
+    <td>${index + 1}</td>
+    <td style="text-align:left;">${i.nama}</td>
+    <td>${i.qty}</td>
+    <td>${rupiah(i.harga)}</td>
+    <td>${rupiah(i.total)}</td>
+  </tr>`;
+});
+
+  html+=`
+    </table>
+    <hr>
+    <b>Total Qty: ${items.reduce((a,b)=>a+b.qty,0)}</b><br>
+<b>Total: Rp ${rupiah(total)}</b>
+    <center>Terima kasih 🙏</center>
+  </div>`;
+
+  const div=document.createElement("div");
+  div.innerHTML=html;
+  document.body.appendChild(div);
+
+  html2canvas(div).then(c=>{
+    const a=document.createElement("a");
+    a.download="nota.png";
+    a.href=c.toDataURL();
+    a.click();
+    div.remove();
+  });
+};
+
+</script>
+
+</body>
+</html>
