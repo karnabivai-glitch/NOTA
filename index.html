@@ -347,36 +347,50 @@ window.screenshot = function(){
   let now = new Date();
 
   let html=`
-  <div style="background:white;padding:15px;font-size:13px;width:380px">
-    <center><b>Bakso Aselihills</b></center>
-    <center>${now.toLocaleString()}</center>
+  <div style="background:white;padding:15px;font-size:13px;width:380px;font-family:Arial">
+
+    <!-- HEADER LOGO -->
+    <div style="display:flex;align-items:center;gap:10px;">
+      <img src="logo.png" style="width:60px;height:auto;">
+      <div>
+        <b style="font-size:16px;">Bakso Aselihills</b><br>
+        <span style="font-size:11px;">${now.toLocaleString()}</span>
+      </div>
+    </div>
+
     <hr>
-    <table style="width:100%;font-size:12px">
+
+    <table style="width:100%;font-size:12px;border-collapse:collapse;text-align:center">
       <tr>
-  <th>No</th>
-  <th>Item</th>
-  <th>Qty</th>
-  <th>Harga</th>
-  <th>Total</th>
-</tr>
+        <th>No</th>
+        <th>Item</th>
+        <th>Qty</th>
+        <th>Harga</th>
+        <th>Total</th>
+      </tr>
   `;
 
   items.forEach((i, index)=>{
-  html+=`<tr>
-    <td>${index + 1}</td>
-    <td style="text-align:left;">${i.nama}</td>
-    <td>${i.qty}</td>
-    <td>${rupiah(i.harga)}</td>
-    <td>${rupiah(i.total)}</td>
-  </tr>`;
-});
+    html+=`<tr>
+      <td>${index + 1}</td>
+      <td style="text-align:left;">${i.nama}</td>
+      <td>${i.qty}</td>
+      <td>${rupiah(i.harga)}</td>
+      <td>${rupiah(i.total)}</td>
+    </tr>`;
+  });
 
   html+=`
     </table>
+
     <hr>
-    <b>Total Qty: ${items.reduce((a,b)=>a+b.qty,0)}</b><br>
-<b>Total: Rp ${rupiah(total)}</b>
-    <center>Terima kasih 🙏</center>
+
+    <div style="font-size:12px;">
+      <b>Total Qty: ${items.reduce((a,b)=>a+b.qty,0)}</b><br>
+      <b>Total: Rp ${rupiah(total)}</b>
+    </div>
+
+    <center style="margin-top:10px;">Terima kasih 🙏</center>
   </div>`;
 
   const div=document.createElement("div");
