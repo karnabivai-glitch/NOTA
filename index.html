@@ -409,12 +409,21 @@ window.screenshot = function(){
     <hr>
 
     <div style="font-size:12px;">
-      <b>Total Qty: ${items.reduce((a,b)=>a+b.qty,0)}</b><br>
-      <b>Total: Rp ${rupiah(total)}</b>
-    </div>
+  <b>Total Qty: ${items.reduce((a,b)=>a+b.qty,0)}</b><br>
+  <b>Total: Rp ${rupiah(total)}</b>
+</div>
 
-    <center style="margin-top:10px;">***Terima kasih***</center>
-  </div>`;
+<hr>
+
+<div style="font-size:12px;">
+  <b>Transfer:</b><br>
+  BCA 5471063666 a.n Novianti<br><br>
+
+  <b>Contact:</b><br>
+  08974880348
+</div>
+
+<center style="margin-top:10px;">***Terima kasih***</center>
 
   const div=document.createElement("div");
   div.innerHTML=html;
