@@ -385,7 +385,69 @@
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    /* ===== EMPTY / NO DATA ===== */
+    /* ===== NO TRANSAKSI BADGE ===== */
+    .trx-no-badge {
+      display: inline-block;
+      background: #f0fdf4; color: var(--green);
+      border: 1px solid #bbf7d0;
+      font-size: 10px; font-weight: 700;
+      padding: 1px 7px; border-radius: 20px;
+      letter-spacing: 0.3px;
+    }
+
+    /* ===== PRINT BUTTON ===== */
+    .btn-print { background: #f59e0b; color: white; }
+
+    /* ===== PRINT MENU POPUP ===== */
+    .print-menu {
+      position: fixed; z-index: 300;
+      background: white; border-radius: 16px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+      padding: 6px; min-width: 200px;
+      border: 1px solid var(--border);
+      display: none;
+    }
+    .print-menu.show { display: block; }
+    .print-menu-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px; border-radius: 10px;
+      cursor: pointer; font-size: 14px; font-weight: 600;
+      transition: background 0.1s;
+    }
+    .print-menu-item:hover { background: #f3f4f6; }
+    .print-menu-item .pm-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .pm-printer .pm-icon { background: #dbeafe; }
+    .pm-pdf     .pm-icon { background: #fee2e2; }
+    .pm-cancel  .pm-icon { background: #f3f4f6; }
+    .print-overlay {
+      position: fixed; inset: 0; z-index: 290;
+      display: none;
+    }
+    .print-overlay.show { display: block; }
+
+    /* ===== PRINT STYLES ===== */
+    @media print {
+      body * { visibility: hidden !important; }
+      #print-area, #print-area * { visibility: visible !important; }
+      #print-area {
+        position: fixed !important; inset: 0 !important;
+        display: flex !important; align-items: flex-start !important;
+        justify-content: center !important;
+        padding: 0 !important; margin: 0 !important;
+        background: white !important;
+      }
+      #print-area .nota-print-doc {
+        width: 100% !important; max-width: 600px !important;
+        margin: 0 auto !important;
+        font-size: 13pt !important;
+      }
+    }
+    /* Hide print-area when not printing */
+    #print-area { display: none; }
     .empty-state {
       text-align: center; padding: 40px 20px;
       color: #cbd5e1; font-size: 13px; font-weight: 600;
@@ -619,6 +681,27 @@
     </div>
   </div>
 
+<!-- ===== PRINT AREA (hidden, for window.print) ===== -->
+<div id="print-area"><div class="nota-print-doc" id="print-doc"></div></div>
+
+<!-- ===== PRINT MENU POPUP ===== -->
+<div class="print-overlay" id="print-overlay" onclick="closePrintMenu()"></div>
+<div class="print-menu" id="print-menu">
+  <div style="padding:8px 14px 4px;font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.8px">Pilih Opsi Print</div>
+  <div class="print-menu-item pm-printer" onclick="doPrint('printer')">
+    <div class="pm-icon">🖨️</div>
+    <div><div style="color:#1e40af;font-weight:700">Print ke Printer</div><div style="font-size:11px;color:#94a3b8;font-weight:400">Kirim langsung ke printer</div></div>
+  </div>
+  <div class="print-menu-item pm-pdf" onclick="doPrint('pdf')">
+    <div class="pm-icon">📄</div>
+    <div><div style="color:#dc2626;font-weight:700">Simpan sebagai PDF</div><div style="font-size:11px;color:#94a3b8;font-weight:400">Buka tab → pilih "Save as PDF"</div></div>
+  </div>
+  <div class="print-menu-item pm-cancel" onclick="closePrintMenu()">
+    <div class="pm-icon">✕</div>
+    <div style="color:#6b7280;font-weight:600">Batal</div>
+  </div>
+</div>
+
 </div><!-- end .app -->
 
 <!-- ===== BOTTOM NAV ===== -->
@@ -839,7 +922,13 @@ window.simpan = async function(){
     await updateDoc(doc(db,"NOTA",editId),{items,total,customer,alamat,hp});
     editId=null; showToast("✅ Nota diupdate");
   } else {
-    await addDoc(collection(db,"NOTA"),{items,total,customer,alamat,hp,tanggal:serverTimestamp()});
+    // Generate nomor transaksi: TRX-YYYYMMDD-XXXX
+    const now=new Date();
+    const pad=(n,l=2)=>String(n).padStart(l,"0");
+    const dateStr=`${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}`;
+    const rand=Math.floor(1000+Math.random()*9000);
+    const noTrx=`TRX-${dateStr}-${rand}`;
+    await addDoc(collection(db,"NOTA"),{items,total,customer,alamat,hp,tanggal:serverTimestamp(),noTrx});
     if(customer){
       const ex=customers.find(c=>c.nama.toLowerCase()===customer.toLowerCase());
       if(!ex){ await addDoc(collection(db,"CUSTOMER"),{nama:customer,alamat:alamat||"",hp:hp||""}); showToast("✅ Nota + customer baru disimpan"); }
@@ -999,15 +1088,20 @@ window.renderTrx = function(){
   }
   document.getElementById("trx-list").innerHTML=filtered.map((n,i)=>{
     const tgl=n.tglObj?n.tglObj.toLocaleString("id-ID"):"-";
+    const noTrx=n.noTrx||"TRX-LAMA";
     const rows=(n.items||[]).map((it,j)=>`
       <tr><td>${j+1}</td><td>${it.nama}</td><td>${it.qty}</td><td>${rupiah(it.harga)}</td><td>${rupiah(it.total)}</td></tr>`).join("");
+    const safeId=`nota_${n.id}`;
     return `
 <div class="trx-item">
   <div class="trx-head" onclick="toggleTrx('tb${i}','ar${i}')">
     <div class="trx-avatar">${initials(n.customer)}</div>
     <div class="trx-info">
       <div class="trx-name">${n.customer||"(no name)"}</div>
-      <div class="trx-date">${tgl}</div>
+      <div class="trx-date">
+        <span class="trx-no-badge">${noTrx}</span>
+        <span style="margin-left:4px">${tgl}</span>
+      </div>
     </div>
     <div class="trx-right">
       <div class="trx-total">Rp ${rupiah(n.total)}</div>
@@ -1023,8 +1117,9 @@ window.renderTrx = function(){
       Alamat: ${n.alamat||"-"} | HP: ${n.hp||"-"}
     </div>
     <div class="trx-actions">
-      <button class="btn btn-blue"  onclick="loadNota('${n.id}')">✏️ Edit</button>
-      <button class="btn btn-red"   onclick="hapusNota('${n.id}')">🗑 Hapus</button>
+      <button class="btn btn-blue"   onclick="loadNota('${n.id}')">✏️ Edit</button>
+      <button class="btn btn-print"  onclick="showPrintMenu(event,'${n.id}')">🖨️ Print</button>
+      <button class="btn btn-red"    onclick="hapusNota('${n.id}')">🗑 Hapus</button>
     </div>
   </div>
 </div>`;
@@ -1036,6 +1131,196 @@ window.toggleTrx = function(bodyId, arrId){
   const arr=document.getElementById(arrId);
   const open=body.classList.toggle("open");
   arr.innerText=open?"▲":"▼";
+};
+
+// ===== PRINT SYSTEM =====
+let _printNotaId = null;
+
+window.showPrintMenu = function(event, notaId){
+  event.stopPropagation();
+  _printNotaId = notaId;
+  const menu=document.getElementById("print-menu");
+  const overlay=document.getElementById("print-overlay");
+  // Position menu near button
+  const rect=event.target.getBoundingClientRect();
+  const menuH=160;
+  let top=rect.bottom+8;
+  if(top+menuH > window.innerHeight-80) top=rect.top-menuH-8;
+  let left=rect.left;
+  if(left+210 > window.innerWidth) left=window.innerWidth-215;
+  menu.style.top=top+"px";
+  menu.style.left=left+"px";
+  menu.classList.add("show");
+  overlay.classList.add("show");
+};
+
+window.closePrintMenu = function(){
+  document.getElementById("print-menu").classList.remove("show");
+  document.getElementById("print-overlay").classList.remove("show");
+};
+
+function buildNotaHTML(n){
+  const namaToko=seting.namaToko||"Nota Penjualan";
+  const kontak=seting.kontak||"";
+  const rekening=seting.rekening||"";
+  const footer=seting.footer||"***Terima kasih***";
+  const logoUrl=seting.logoUrl||"";
+  const tgl=n.tglObj?n.tglObj.toLocaleString("id-ID"):"-";
+  const total=(n.items||[]).reduce((a,b)=>a+b.total,0);
+  const totalQty=(n.items||[]).reduce((a,b)=>a+b.qty,0);
+
+  const logoHtml=logoUrl
+    ? `<img src="${logoUrl}" style="width:64px;height:64px;object-fit:contain" onerror="this.style.display='none'">`
+    : `<div style="width:64px;height:64px;border-radius:12px;background:#dcfce7;display:flex;align-items:center;justify-content:center;font-size:28px">🧾</div>`;
+
+  const rows=(n.items||[]).map((it,idx)=>`
+    <tr>
+      <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:center">${idx+1}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:left">${it.nama}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:center">${it.qty}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:right">${rupiah(it.harga)}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:right">${rupiah(it.total)}</td>
+    </tr>`).join("");
+
+  const rekeningBlock=rekening
+    ? `<hr style="border:none;border-top:1px solid #ccc;margin:12px 0">
+       <div style="font-size:13px;white-space:pre-line"><b>Transfer:</b><br>${rekening}</div>`
+    : "";
+  const kontakBlock=kontak
+    ? `<div style="font-size:13px;margin-top:8px"><b>Contact:</b> ${kontak}</div>`
+    : "";
+
+  return `
+<div style="background:white;padding:24px 28px;font-family:Arial,sans-serif;color:#222;font-size:14px;line-height:1.6;max-width:600px">
+  <!-- HEADER -->
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+    ${logoHtml}
+    <div>
+      <div style="font-size:22px;font-weight:bold">${namaToko}</div>
+      <div style="font-size:12px;color:#555">${tgl}</div>
+    </div>
+  </div>
+
+  <hr style="border:none;border-top:1px solid #ccc;margin:0 0 14px">
+
+  <!-- NO TRANSAKSI -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div style="font-size:13px"><b>Kepada Yth.</b><br>${n.customer||"-"}<br>${n.alamat||"-"}<br>${n.hp||"-"}</div>
+    <div style="text-align:right">
+      <div style="font-size:11px;color:#888">No. Transaksi</div>
+      <div style="font-size:13px;font-weight:bold;color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;padding:3px 10px;border-radius:20px;display:inline-block">${n.noTrx||"TRX-LAMA"}</div>
+    </div>
+  </div>
+
+  <hr style="border:none;border-top:1px solid #ccc;margin:0 0 10px">
+
+  <!-- TABEL -->
+  <table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead>
+      <tr style="color:#888;border-bottom:2px solid #ccc">
+        <th style="padding:8px 6px;text-align:center;font-weight:600">No</th>
+        <th style="padding:8px 6px;text-align:left;font-weight:600">Item</th>
+        <th style="padding:8px 6px;text-align:center;font-weight:600">Qty</th>
+        <th style="padding:8px 6px;text-align:right;font-weight:600">Harga</th>
+        <th style="padding:8px 6px;text-align:right;font-weight:600">Total</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+
+  <hr style="border:none;border-top:2px solid #ccc;margin:10px 0">
+
+  <!-- TOTAL -->
+  <div style="font-size:14px">
+    <b>Total Qty: ${totalQty}</b><br>
+    <b style="font-size:17px">Total: Rp ${rupiah(total)}</b>
+  </div>
+
+  ${rekeningBlock}
+  ${kontakBlock}
+
+  <div style="text-align:center;margin-top:16px;font-size:13px;color:#555">${footer}</div>
+</div>`;
+}
+
+window.doPrint = function(mode){
+  closePrintMenu();
+  const n=allNotas.find(x=>x.id===_printNotaId);
+  if(!n) return showToast("❌ Data tidak ditemukan");
+
+  const notaContent = buildNotaHTML(n);
+  const noTrx = n.noTrx || "nota";
+  const namaToko = seting.namaToko || "Nota Penjualan";
+
+  if(mode==="printer"){
+    // ===== PRINT KE PRINTER =====
+    // Render ke print-area tersembunyi, trigger window.print()
+    const printDoc=document.getElementById("print-doc");
+    printDoc.innerHTML=notaContent;
+    document.getElementById("print-area").style.display="flex";
+    setTimeout(()=>{
+      window.print();
+      setTimeout(()=>{ document.getElementById("print-area").style.display="none"; }, 800);
+    }, 200);
+
+  } else {
+    // ===== SAVE PDF =====
+    // Buka tab baru dengan halaman nota full-page, dialog print → Save as PDF
+    const logoUrl = seting.logoUrl||"";
+    const logoTag = logoUrl
+      ? `<img src="${logoUrl}" style="width:70px;height:auto;object-fit:contain" onerror="this.style.display='none'">`
+      : `<div style="width:64px;height:64px;border-radius:12px;background:#dcfce7;display:flex;align-items:center;justify-content:center;font-size:28px">🧾</div>`;
+
+    const fullPage=`<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>${noTrx} - ${namaToko}</title>
+  <style>
+    @page { size: A5 portrait; margin: 16mm 14mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 13pt; color: #222; background: white; }
+    .header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+    .toko-nama { font-size: 20pt; font-weight: bold; }
+    .toko-tgl  { font-size: 10pt; color: #555; margin-top: 2px; }
+    hr { border: none; border-top: 1px solid #ccc; margin: 12px 0; }
+    hr.bold { border-top: 2px solid #ccc; }
+    .kepada-notrx { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; gap: 10px; }
+    .kepada { font-size: 12pt; line-height: 1.6; }
+    .notrx-box { text-align: right; flex-shrink: 0; }
+    .notrx-label { font-size: 9pt; color: #888; }
+    .notrx-val {
+      font-size: 11pt; font-weight: bold; color: #16a34a;
+      background: #f0fdf4; border: 1px solid #bbf7d0;
+      padding: 3px 12px; border-radius: 20px; display: inline-block; margin-top: 3px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 11pt; }
+    th { padding: 7px 5px; border-bottom: 2px solid #ccc; color: #888; font-weight: 600; }
+    td { padding: 7px 5px; border-bottom: 1px solid #eee; }
+    .center { text-align: center; }
+    .right  { text-align: right; }
+    .left   { text-align: left; }
+    .total-block { font-size: 12pt; margin-top: 4px; line-height: 1.8; }
+    .total-big { font-size: 15pt; font-weight: bold; }
+    .rekening-block { font-size: 11pt; white-space: pre-line; line-height: 1.6; }
+    .footer { text-align: center; font-size: 11pt; color: #555; margin-top: 18px; }
+    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  </style>
+</head>
+<body>
+${notaContent.replace(/<div style="background:white;padding:[^>]+>/,'<div>').replace(/font-family:Arial,sans-serif;/g,'').replace(/font-size:14px;/g,'')}
+<script>
+  window.addEventListener('load', function(){ setTimeout(function(){ window.print(); window.close(); }, 400); });
+<\/script>
+</body>
+</html>`;
+
+    const blob=new Blob([fullPage],{type:"text/html;charset=utf-8"});
+    const url=URL.createObjectURL(blob);
+    const win=window.open(url,"_blank");
+    if(!win) showToast("⚠️ Izinkan popup browser untuk Save PDF");
+    setTimeout(()=>URL.revokeObjectURL(url), 30000);
+  }
 };
 
 // ===== LAPORAN =====
