@@ -457,10 +457,6 @@
       </div>
     </div>
 
-    <div style="padding:0 10px">
-      <div class="section-label">📂 Riwayat Nota</div>
-      <div id="riwayat"></div>
-    </div>
   </div>
 
   <!-- ===== PAGE: MASTER (Customer & Produk) ===== -->
@@ -579,6 +575,7 @@
     <div class="set-form" style="margin-top:10px">
       <div class="set-form-title">🏪 Informasi Toko</div>
       <input id="set-nama-toko" placeholder="Nama Toko" style="margin-bottom:8px">
+      <input id="set-logo-url"  placeholder="URL Logo (https://...)" style="margin-bottom:8px">
       <input id="set-kontak"    placeholder="No HP / Contact" style="margin-bottom:8px">
       <textarea id="set-rekening" placeholder="Info Transfer / Rekening"></textarea>
       <textarea id="set-footer"   placeholder="Pesan Nota (footer)" style="margin-top:8px"></textarea>
@@ -852,7 +849,7 @@ window.simpan = async function(){
   resetForm();
 };
 
-// ===== RIWAYAT (on nota page) =====
+// ===== SNAPSHOT NOTA =====
 onSnapshot(collection(db,"NOTA"), snap=>{
   allNotas=[];
   snap.forEach(d=>{
@@ -861,24 +858,8 @@ onSnapshot(collection(db,"NOTA"), snap=>{
     allNotas.push({id:d.id,...data,tglObj:tgl});
   });
   allNotas.sort((a,b)=>(b.tglObj||0)-(a.tglObj||0));
-  renderRiwayat();
   renderTrx();
 });
-
-function renderRiwayat(){
-  const el=document.getElementById("riwayat");
-  if(!allNotas.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">📂</div>Belum ada riwayat</div>'; return; }
-  el.innerHTML=allNotas.slice(0,15).map(n=>`
-    <div class="riwayat-item" onclick="loadNota('${n.id}')">
-      <div class="riwayat-avatar">${initials(n.customer)}</div>
-      <div class="riwayat-info">
-        <div class="riwayat-name">${n.customer||"(no name)"}</div>
-        <div class="riwayat-date">${n.tglObj?n.tglObj.toLocaleString("id-ID"):"-"}</div>
-      </div>
-      <div class="riwayat-total">Rp ${rupiah(n.total)}</div>
-      <div class="riwayat-del" onclick="event.stopPropagation();hapusNota('${n.id}')">🗑</div>
-    </div>`).join("");
-}
 
 window.loadNota = async function(id){
   const snap=await getDoc(doc(db,"NOTA",id));
@@ -1122,6 +1103,7 @@ window.renderLaporan = function(){
 function loadSeting(){
   try { seting=JSON.parse(localStorage.getItem("nota-seting")||"{}"); } catch(e){ seting={}; }
   document.getElementById("set-nama-toko").value=seting.namaToko||"";
+  document.getElementById("set-logo-url").value=seting.logoUrl||"";
   document.getElementById("set-kontak").value=seting.kontak||"";
   document.getElementById("set-rekening").value=seting.rekening||"";
   document.getElementById("set-footer").value=seting.footer||"";
@@ -1136,6 +1118,7 @@ function updateSetingPreview(){
 }
 window.saveSeting = function(){
   seting.namaToko=document.getElementById("set-nama-toko").value.trim();
+  seting.logoUrl=document.getElementById("set-logo-url").value.trim();
   seting.kontak=document.getElementById("set-kontak").value.trim();
   seting.rekening=document.getElementById("set-rekening").value.trim();
   seting.footer=document.getElementById("set-footer").value.trim();
@@ -1159,42 +1142,100 @@ loadSeting();
 
 // ===== SCREENSHOT =====
 window.screenshot = function(){
+  if(!items.length) return showToast("⚠️ Tidak ada item!");
   const total=items.reduce((a,b)=>a+b.total,0);
   const now=new Date();
   const customer=document.getElementById("customer").value||"-";
   const alamat=document.getElementById("alamat").value||"-";
   const hp=document.getElementById("hp").value||"-";
-  const namaToko=seting.namaToko||"Nota Penjualan";
+  const namaToko=seting.namaToko||"Bakso Aselih Hills";
   const kontak=seting.kontak||"";
   const rekening=seting.rekening||"";
-  const footer=seting.footer||"Terima kasih!";
+  const footer=seting.footer||"***Terima kasih***";
+  const logoUrl=seting.logoUrl||"logo.png";
 
-  let html=`<div style="background:white;padding:16px;font-size:13px;width:380px;font-family:Arial">
-    <div style="text-align:center;margin-bottom:12px">
-      <b style="font-size:16px">${namaToko}</b><br>
-      <span style="font-size:11px;color:#666">${kontak}</span><br>
-      <span style="font-size:11px;color:#888">${now.toLocaleString("id-ID")}</span>
-    </div>
-    <hr style="margin:8px 0">
-    <div style="font-size:12px;margin-bottom:8px"><b>Kepada Yth.</b><br>${customer}<br>${alamat}<br>${hp}</div>
-    <hr style="margin:8px 0">
-    <table style="width:100%;font-size:12px;border-collapse:collapse;text-align:center">
-      <tr style="color:#666"><th>#</th><th style="text-align:left">Item</th><th>Qty</th><th>Harga</th><th>Total</th></tr>`;
+  // Header: logo kiri + nama toko kanan (mirip gambar referensi)
+  const logoHtml=`<img src="${logoUrl}" style="width:64px;height:auto;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">`;
+
+  let tableRows="";
   items.forEach((it,idx)=>{
-    html+=`<tr><td>${idx+1}</td><td style="text-align:left">${it.nama}</td><td>${it.qty}</td><td>${rupiah(it.harga)}</td><td>${rupiah(it.total)}</td></tr>`;
+    tableRows+=`<tr>
+      <td style="padding:7px 6px;border-bottom:1px solid #eee;text-align:center">${idx+1}</td>
+      <td style="padding:7px 6px;border-bottom:1px solid #eee;text-align:left">${it.nama}</td>
+      <td style="padding:7px 6px;border-bottom:1px solid #eee;text-align:center">${it.qty}</td>
+      <td style="padding:7px 6px;border-bottom:1px solid #eee;text-align:right">${rupiah(it.harga)}</td>
+      <td style="padding:7px 6px;border-bottom:1px solid #eee;text-align:right">${rupiah(it.total)}</td>
+    </tr>`;
   });
-  html+=`</table>
-    <hr style="margin:8px 0">
-    <div style="font-size:12px"><b>Total Qty: ${items.reduce((a,b)=>a+b.qty,0)}</b><br><b style="font-size:14px">Total: Rp ${rupiah(total)}</b></div>
-    <hr style="margin:8px 0">
-    <div style="font-size:12px;white-space:pre-line">${rekening}</div>
-    <div style="text-align:center;margin-top:12px;font-size:12px;color:#555">${footer}</div>
-  </div>`;
 
-  const div=document.createElement("div"); div.innerHTML=html; document.body.appendChild(div);
-  html2canvas(div,{useCORS:true}).then(c=>{
-    const a=document.createElement("a"); a.download="nota.png"; a.href=c.toDataURL(); a.click(); div.remove();
-  });
+  const rekeningBlock=rekening
+    ? `<hr style="border:none;border-top:1px solid #ccc;margin:10px 0">
+       <div style="font-size:13px;white-space:pre-line"><b>Transfer:</b><br>${rekening}</div>`
+    : "";
+
+  const kontakBlock=kontak
+    ? `<div style="font-size:13px;margin-top:8px"><b>Contact:</b> ${kontak}</div>`
+    : "";
+
+  let html=`
+<div style="background:white;padding:18px 20px;font-size:14px;width:420px;font-family:Arial,sans-serif;color:#222;line-height:1.5">
+
+  <!-- HEADER: logo + nama toko -->
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+    ${logoHtml}
+    <div>
+      <div style="font-size:20px;font-weight:bold">${namaToko}</div>
+      <div style="font-size:12px;color:#555">${now.toLocaleString("id-ID")}</div>
+    </div>
+  </div>
+
+  <hr style="border:none;border-top:1px solid #ccc;margin:0 0 12px">
+
+  <!-- KEPADA -->
+  <div style="font-size:13px;margin-bottom:12px">
+    <b>Kepada Yth.</b><br>
+    ${customer}<br>
+    ${alamat}<br>
+    ${hp}
+  </div>
+
+  <hr style="border:none;border-top:1px solid #ccc;margin:0 0 10px">
+
+  <!-- TABEL ITEM -->
+  <table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead>
+      <tr style="color:#888">
+        <th style="padding:7px 6px;border-bottom:2px solid #ccc;text-align:center;font-weight:600">No</th>
+        <th style="padding:7px 6px;border-bottom:2px solid #ccc;text-align:left;font-weight:600">Item</th>
+        <th style="padding:7px 6px;border-bottom:2px solid #ccc;text-align:center;font-weight:600">Qty</th>
+        <th style="padding:7px 6px;border-bottom:2px solid #ccc;text-align:right;font-weight:600">Harga</th>
+        <th style="padding:7px 6px;border-bottom:2px solid #ccc;text-align:right;font-weight:600">Total</th>
+      </tr>
+    </thead>
+    <tbody>${tableRows}</tbody>
+  </table>
+
+  <hr style="border:none;border-top:2px solid #ccc;margin:10px 0">
+
+  <!-- TOTAL -->
+  <div style="font-size:13px">
+    <b>Total Qty: ${items.reduce((a,b)=>a+b.qty,0)}</b><br>
+    <b style="font-size:15px">Total: Rp ${rupiah(total)}</b>
+  </div>
+
+  ${rekeningBlock}
+  ${kontakBlock}
+
+  <div style="text-align:center;margin-top:14px;font-size:13px;color:#555">${footer}</div>
+</div>`;
+
+  const div=document.createElement("div");
+  div.style.cssText="position:fixed;left:-9999px;top:0";
+  div.innerHTML=html;
+  document.body.appendChild(div);
+  html2canvas(div.firstElementChild,{useCORS:true,backgroundColor:"#ffffff",scale:2}).then(c=>{
+    const a=document.createElement("a"); a.download="nota.png"; a.href=c.toDataURL("image/png"); a.click(); div.remove();
+  }).catch(()=>{ div.remove(); showToast("❌ Gagal buat nota"); });
 };
 
 // ===== SEARCH INPUT on transaksi =====
