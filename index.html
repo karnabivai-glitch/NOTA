@@ -1,275 +1,442 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <title>Nota Clean UI</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Nota Penjualan</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-
   <style>
-    * { box-sizing: border-box; margin:0; padding:0; }
-    body { font-family: 'Segoe UI', sans-serif; background:#f4f6f8; }
-    .app { max-width:480px; margin:auto; padding-bottom:70px; }
+    :root {
+      --green: #16a34a;
+      --green-light: #dcfce7;
+      --green-mid: #4ade80;
+      --blue: #2563eb;
+      --blue-light: #dbeafe;
+      --orange: #ea580c;
+      --purple: #7c3aed;
+      --red: #dc2626;
+      --red-light: #fee2e2;
+      --bg: #f0fdf4;
+      --card: #ffffff;
+      --text: #111827;
+      --sub: #6b7280;
+      --border: #e5e7eb;
+      --header-h: 56px;
+      --nav-h: 64px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overscroll-behavior: none;
+    }
 
+    /* ===== LAYOUT ===== */
+    .app { max-width: 480px; margin: 0 auto; position: relative; min-height: 100dvh; }
+
+    /* ===== HEADER ===== */
     .header {
-      position:sticky; top:0;
-      background:#2ecc71; color:white;
-      text-align:center; padding:14px;
-      font-weight:bold; font-size:18px; z-index:10;
+      position: sticky; top: 0; z-index: 50;
+      height: var(--header-h);
+      background: var(--green);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px;
+      box-shadow: 0 2px 12px rgba(22,163,74,0.3);
     }
-
-    /* TAB NAV */
-    .tab-nav {
-      display:flex; background:white;
-      border-bottom:2px solid #eee;
-      position:sticky; top:52px; z-index:9;
-      overflow-x:auto; scrollbar-width:none;
+    .header-title {
+      font-size: 17px; font-weight: 800; color: white;
+      letter-spacing: -0.3px;
     }
-    .tab-nav::-webkit-scrollbar { display:none; }
-    .tab-btn {
-      flex:0 0 auto; padding:10px 14px;
-      border:none; background:none; font-size:12px;
-      cursor:pointer; color:#888;
-      border-bottom:3px solid transparent;
-      margin-bottom:-2px; transition:all .2s; white-space:nowrap;
+    .header-sub { font-size: 11px; color: rgba(255,255,255,0.75); font-weight: 500; }
+    .header-right { display: flex; align-items: center; gap: 8px; }
+
+    /* ===== PAGE SYSTEM ===== */
+    .page { display: none; padding-bottom: calc(var(--nav-h) + 12px); }
+    .page.active { display: block; }
+
+    /* ===== BOTTOM NAV ===== */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 480px; z-index: 50;
+      height: var(--nav-h);
+      background: white;
+      border-top: 1px solid var(--border);
+      display: flex;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
     }
-    .tab-btn.active { color:#27ae60; border-bottom-color:#27ae60; font-weight:bold; }
+    .nav-btn {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 3px; border: none; background: none;
+      cursor: pointer; padding: 8px 4px;
+      color: #9ca3af; font-family: inherit;
+      transition: color 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
+    }
+    .nav-btn.active { color: var(--green); }
+    .nav-btn.active::before {
+      content: '';
+      position: absolute; top: 0; left: 20%; right: 20%; height: 3px;
+      background: var(--green); border-radius: 0 0 4px 4px;
+    }
+    .nav-icon { font-size: 22px; line-height: 1; }
+    .nav-label { font-size: 10px; font-weight: 600; letter-spacing: 0.2px; }
 
-    .page { display:none; }
-    .page.active { display:block; }
-
+    /* ===== CARDS ===== */
     .card {
-      background:white; margin:10px; padding:12px;
-      border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.08);
+      background: var(--card); margin: 10px;
+      border-radius: 14px; padding: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
     }
-    .grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    .full { grid-column: span 2; }
+    .section-label {
+      font-size: 11px; font-weight: 700; color: var(--green);
+      text-transform: uppercase; letter-spacing: 1px;
+      padding: 14px 10px 6px;
+    }
 
-    .input-wrap { position:relative; width:100%; }
+    /* ===== INPUTS ===== */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .form-grid .full { grid-column: span 2; }
+    .input-wrap { position: relative; }
     .input-wrap.full { grid-column: span 2; }
 
     input, select {
-      width:100%; padding:10px; border-radius:8px;
-      border:1px solid #ddd; font-size:14px;
-      outline:none; transition:border .2s; background:white;
+      width: 100%; padding: 11px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px; font-size: 14px;
+      font-family: inherit; outline: none;
+      background: white; color: var(--text);
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
-    input:focus, select:focus { border-color:#27ae60; }
+    input:focus, select:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(22,163,74,0.12);
+    }
+    input::placeholder { color: #c4c9d0; }
+    input[type=number] { -moz-appearance: textfield; }
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
+    /* ===== DROPDOWN AUTOCOMPLETE ===== */
     .dropdown {
-      position:absolute; top:100%; left:0; right:0;
-      background:white; border:1px solid #ddd;
-      border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.12);
-      z-index:100; max-height:200px; overflow-y:auto; display:none;
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      background: white; border: 1.5px solid var(--border);
+      border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+      z-index: 100; max-height: 220px; overflow-y: auto; display: none;
     }
-    .dropdown.show { display:block; }
+    .dropdown.show { display: block; }
     .dropdown-item {
-      padding:10px 12px; cursor:pointer;
-      font-size:13px; border-bottom:1px solid #f0f0f0; transition:background .15s;
+      padding: 11px 14px; cursor: pointer;
+      border-bottom: 1px solid #f5f5f5; transition: background 0.1s;
     }
-    .dropdown-item:hover { background:#f0fff4; }
-    .dropdown-item:last-child { border-bottom:none; }
-    .item-main { font-weight:500; color:#333; }
-    .item-sub  { font-size:11px; color:#888; margin-top:2px; }
-    .item-price { font-size:11px; color:#27ae60; font-weight:600; }
+    .dropdown-item:last-child { border-bottom: none; }
+    .dropdown-item:hover, .dropdown-item:active { background: var(--green-light); }
+    .item-main { font-weight: 600; font-size: 13px; color: var(--text); }
+    .item-sub  { font-size: 11px; color: var(--sub); margin-top: 2px; }
+    .item-price{ font-size: 11px; color: var(--green); font-weight: 700; margin-top: 2px; }
 
-    table { width:100%; border-collapse:collapse; font-size:13px; text-align:center; }
-    th, td { padding:8px; border-bottom:1px solid #eee; }
-    th { color:#888; font-weight:500; }
-    .aksi { cursor:pointer; font-size:12px; color:#e74c3c; }
-    .edit { color:#3498db; }
+    /* ===== BUTTONS ===== */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 6px; padding: 11px 16px;
+      border: none; border-radius: 10px; font-size: 13px;
+      font-family: inherit; font-weight: 700; cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.97); opacity: 0.85; }
+    .btn-green  { background: var(--green); color: white; }
+    .btn-blue   { background: var(--blue); color: white; }
+    .btn-red    { background: var(--red); color: white; }
+    .btn-purple { background: var(--purple); color: white; }
+    .btn-ghost  { background: #f3f4f6; color: var(--text); }
+    .btn-full   { width: 100%; }
 
+    /* ===== FIXED BOTTOM BAR (Nota page) ===== */
+    .nota-bottom-bar {
+      position: fixed; bottom: var(--nav-h); left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 480px; z-index: 40;
+      background: white; padding: 10px 12px;
+      display: flex; gap: 8px;
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.06);
+    }
+    .nota-bottom-bar.hidden { display: none; }
+    .nota-bottom-bar .btn { flex: 1; padding: 10px 8px; font-size: 13px; }
+
+    /* ===== TABLE ===== */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 8px 6px; border-bottom: 1px solid #f0f0f0; text-align: center; }
+    th { color: var(--sub); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    td:nth-child(2) { text-align: left; }
+    th:nth-child(2) { text-align: left; }
+    .aksi-btns { display: flex; gap: 4px; justify-content: center; }
+    .aksi-btn {
+      font-size: 11px; padding: 3px 8px; border-radius: 6px;
+      cursor: pointer; border: none; font-family: inherit; font-weight: 600;
+    }
+    .aksi-edit { background: var(--blue-light); color: var(--blue); }
+    .aksi-del  { background: var(--red-light); color: var(--red); }
+
+    /* ===== TOTAL ROW ===== */
+    .total-section {
+      margin-top: 12px; padding-top: 10px;
+      border-top: 2px dashed var(--border);
+    }
     .total-row {
-      display:flex; justify-content:space-between;
-      margin-top:10px; font-weight:bold; font-size:15px;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 4px 0;
     }
+    .total-row .label { font-size: 13px; color: var(--sub); }
+    .total-row .value { font-size: 15px; font-weight: 800; color: var(--green); }
 
-    .history { padding:10px; }
-    .history-item {
-      background:white; padding:10px; margin:5px 0; border-radius:8px;
-    }
-
-    .bottom {
-      position:fixed; bottom:0; left:0; right:0;
-      display:flex; justify-content:center;
-    }
-    .bottom-inner {
-      max-width:480px; width:100%; background:white;
-      padding:10px; display:flex; gap:8px;
-      box-shadow:0 -2px 10px rgba(0,0,0,0.1);
-    }
-    button {
-      flex:1; padding:10px; border:none;
-      border-radius:8px; font-size:13px; color:white; cursor:pointer;
-    }
-    .btn-add   { background:#27ae60; }
-    .btn-save  { background:#2980b9; }
-    .btn-reset { background:#e74c3c; }
-    .btn-shot  { background:#8e44ad; }
-
+    /* ===== DB ITEMS (list customer/produk) ===== */
+    .db-list { padding: 0 10px 10px; }
     .db-item {
-      display:flex; justify-content:space-between; align-items:center;
-      padding:10px 12px; background:white; border-radius:8px;
-      margin:6px 10px; box-shadow:0 1px 4px rgba(0,0,0,0.06);
+      display: flex; align-items: center; gap: 12px;
+      background: white; border-radius: 12px;
+      padding: 12px 14px; margin-bottom: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
     }
-    .db-item-info { flex:1; }
-    .db-item-name  { font-weight:600; font-size:14px; color:#222; }
-    .db-item-sub   { font-size:12px; color:#888; margin-top:2px; }
-    .db-item-price { font-size:13px; color:#27ae60; font-weight:600; }
-    .db-actions { display:flex; gap:8px; }
-    .db-actions span { font-size:12px; cursor:pointer; padding:4px 8px; border-radius:6px; }
-    .db-del  { color:white; background:#e74c3c; }
-    .db-edit { color:white; background:#3498db; }
+    .db-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--green-light); display: flex;
+      align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .db-icon.blue { background: var(--blue-light); }
+    .db-info { flex: 1; min-width: 0; }
+    .db-name  { font-weight: 700; font-size: 14px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .db-sub   { font-size: 12px; color: var(--sub); margin-top: 1px; }
+    .db-price { font-size: 13px; color: var(--green); font-weight: 700; }
+    .db-actions { display: flex; gap: 6px; }
+    .db-actions span {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; cursor: pointer;
+    }
+    .db-edit-btn { background: var(--blue-light); }
+    .db-del-btn  { background: var(--red-light); }
 
-    .section-title {
-      font-size:13px; font-weight:700; color:#27ae60;
-      padding:12px 10px 4px; text-transform:uppercase; letter-spacing:.5px;
-    }
+    /* ===== FORM ADD (master data) ===== */
     .form-add {
-      margin:10px; background:white; border-radius:12px;
-      padding:12px; box-shadow:0 2px 6px rgba(0,0,0,0.08);
+      margin: 10px; background: white; border-radius: 14px;
+      padding: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
-    .form-add input { margin-bottom:8px; }
-    .form-add button { flex:none; width:100%; background:#27ae60; }
-    .empty-state { text-align:center; padding:30px; color:#bbb; font-size:13px; }
-
-    .toast {
-      position:fixed; bottom:80px; left:50%;
-      transform:translateX(-50%) translateY(20px);
-      background:#222; color:white; padding:10px 20px;
-      border-radius:20px; font-size:13px; opacity:0;
-      transition:all .3s; z-index:300; pointer-events:none;
+    .form-add-title {
+      font-size: 13px; font-weight: 700; color: var(--green);
+      margin-bottom: 10px;
     }
-    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    .form-add input { margin-bottom: 8px; }
+    .form-add input:last-of-type { margin-bottom: 0; }
 
     /* ===== TRANSAKSI ===== */
-    .filter-bar {
-      display:flex; gap:8px; padding:10px; flex-wrap:wrap;
+    .filter-card {
+      margin: 10px; background: white; border-radius: 14px;
+      padding: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
-    .filter-bar input, .filter-bar select { flex:1; min-width:120px; font-size:13px; }
-    .filter-bar button { flex:0 0 auto; padding:10px 14px; background:#27ae60; font-size:13px; }
+    .filter-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .filter-row input, .filter-row select { flex: 1; min-width: 100px; font-size: 13px; }
 
-    .trx-summary { display:flex; gap:8px; padding:10px; flex-wrap:wrap; }
-    .trx-sum-card {
-      flex:1; min-width:80px; background:white; border-radius:10px;
-      padding:12px; text-align:center; box-shadow:0 1px 4px rgba(0,0,0,0.06);
+    .summary-row { display: flex; gap: 8px; padding: 0 10px 10px; }
+    .sum-card {
+      flex: 1; background: white; border-radius: 12px;
+      padding: 12px 8px; text-align: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
     }
-    .trx-sum-card .val { font-size:15px; font-weight:700; color:#27ae60; }
-    .trx-sum-card .lbl { font-size:10px; color:#888; margin-top:4px; }
+    .sum-val { font-size: 14px; font-weight: 800; color: var(--green); }
+    .sum-lbl { font-size: 10px; color: var(--sub); margin-top: 3px; font-weight: 600; }
 
     .trx-item {
-      background:white; border-radius:10px;
-      margin:6px 10px; overflow:hidden;
-      box-shadow:0 1px 5px rgba(0,0,0,0.07);
+      background: white; border-radius: 12px;
+      margin: 0 10px 8px; overflow: hidden;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.06);
     }
     .trx-head {
-      display:flex; justify-content:space-between; align-items:center;
-      padding:10px 12px; cursor:pointer;
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px; cursor: pointer;
     }
-    .trx-head:hover { background:#f9fffe; }
-    .trx-info { flex:1; }
-    .trx-name  { font-weight:600; font-size:14px; color:#222; }
-    .trx-date  { font-size:11px; color:#aaa; margin-top:2px; }
-    .trx-total { font-weight:700; font-size:14px; color:#27ae60; }
-    .trx-arrow { color:#aaa; font-size:12px; margin-left:8px; }
-    .trx-body  { display:none; padding:10px 12px; border-top:1px solid #f0f0f0; background:#fafffe; }
-    .trx-body.open { display:block; }
-    .trx-body table { font-size:12px; }
-    .trx-actions { display:flex; gap:8px; margin-top:8px; }
-    .trx-actions button { flex:1; padding:7px; font-size:12px; border-radius:6px; }
-    .btn-load  { background:#2980b9; }
-    .btn-hapus { background:#e74c3c; }
+    .trx-head:active { background: #fafffe; }
+    .trx-avatar {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: var(--green-light); color: var(--green);
+      font-weight: 800; font-size: 14px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .trx-info { flex: 1; min-width: 0; }
+    .trx-name  { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .trx-date  { font-size: 11px; color: var(--sub); margin-top: 1px; }
+    .trx-right { text-align: right; }
+    .trx-total { font-weight: 800; font-size: 14px; color: var(--green); }
+    .trx-arrow { font-size: 11px; color: var(--sub); margin-top: 2px; }
+    .trx-body  { display: none; padding: 12px 14px; border-top: 1px solid #f0f0f0; background: #fafffe; }
+    .trx-body.open { display: block; }
+    .trx-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .trx-actions .btn { flex: 1; padding: 8px; font-size: 12px; border-radius: 8px; }
 
     /* ===== LAPORAN ===== */
-    .lap-filter { display:flex; gap:8px; padding:10px; align-items:center; flex-wrap:wrap; }
-    .lap-filter select { flex:1; font-size:13px; }
-    .lap-filter input  { flex:1; font-size:13px; min-width:100px; }
-    .lap-filter button { flex:0 0 auto; padding:10px 14px; background:#27ae60; font-size:13px; }
-
-    .stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:10px; }
-    .stat-card {
-      background:white; border-radius:12px; padding:14px;
-      box-shadow:0 2px 6px rgba(0,0,0,0.08); text-align:center;
+    .tab-sub {
+      display: flex; margin: 10px;
+      border-radius: 10px; overflow: hidden;
+      border: 1.5px solid var(--border); background: white;
     }
-    .stat-card.green  { border-top:4px solid #2ecc71; }
-    .stat-card.blue   { border-top:4px solid #3498db; }
-    .stat-card.orange { border-top:4px solid #e67e22; }
-    .stat-card.purple { border-top:4px solid #9b59b6; }
-    .stat-card .sval  { font-size:17px; font-weight:700; color:#222; }
-    .stat-card .slbl  { font-size:11px; color:#888; margin-top:4px; }
+    .tab-sub-btn {
+      flex: 1; padding: 9px 6px; border: none; background: none;
+      font-family: inherit; font-size: 11px; font-weight: 700;
+      color: var(--sub); cursor: pointer;
+      border-right: 1px solid var(--border);
+      transition: background 0.15s, color 0.15s;
+    }
+    .tab-sub-btn:last-child { border-right: none; }
+    .tab-sub-btn.active { background: var(--green); color: white; }
+
+    .sub-page { display: none; }
+    .sub-page.active { display: block; }
+
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; }
+    .stat-card {
+      background: white; border-radius: 14px; padding: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06); text-align: center;
+      border-top: 4px solid var(--border);
+    }
+    .stat-card.green  { border-top-color: var(--green); }
+    .stat-card.blue   { border-top-color: var(--blue); }
+    .stat-card.orange { border-top-color: var(--orange); }
+    .stat-card.purple { border-top-color: var(--purple); }
+    .stat-val { font-size: 16px; font-weight: 800; color: var(--text); }
+    .stat-lbl { font-size: 10px; color: var(--sub); margin-top: 4px; font-weight: 600; }
 
     .chart-card {
-      background:white; border-radius:12px;
-      margin:0 10px 10px; padding:14px;
-      box-shadow:0 2px 6px rgba(0,0,0,0.08);
+      background: white; border-radius: 14px;
+      margin: 0 10px 10px; padding: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
-    .chart-card h4 { font-size:13px; color:#555; margin-bottom:10px; font-weight:600; }
+    .chart-title { font-size: 13px; color: var(--sub); margin-bottom: 10px; font-weight: 700; }
 
-    .tab-sub {
-      display:flex; margin:10px;
-      border-radius:8px; overflow:hidden; border:1px solid #ddd;
-    }
-    .tab-sub button {
-      flex:1; border-radius:0; background:#f8f8f8;
-      color:#555; padding:8px; font-size:12px; border-right:1px solid #ddd;
-    }
-    .tab-sub button:last-child { border-right:none; }
-    .tab-sub button.active { background:#27ae60; color:white; font-weight:700; }
-
-    .sub-page { display:none; }
-    .sub-page.active { display:block; }
-
-    .rank-list { padding:0 10px 10px; }
+    .rank-list { padding: 0 10px 10px; }
     .rank-item {
-      display:flex; align-items:center; background:white;
-      border-radius:8px; padding:10px 12px;
-      margin-bottom:6px; box-shadow:0 1px 4px rgba(0,0,0,0.05);
+      display: flex; align-items: center; background: white;
+      border-radius: 12px; padding: 10px 12px;
+      margin-bottom: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      gap: 10px;
     }
     .rank-no {
-      width:26px; height:26px; border-radius:50%;
-      background:#2ecc71; color:white; font-size:12px; font-weight:700;
-      display:flex; align-items:center; justify-content:center;
-      margin-right:10px; flex-shrink:0;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--green); color: white; font-size: 12px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .rank-no.gold   { background:#f39c12; }
-    .rank-no.silver { background:#95a5a6; }
-    .rank-no.bronze { background:#cd7f32; }
-    .rank-info { flex:1; }
-    .rank-name { font-weight:600; font-size:13px; color:#222; }
-    .rank-sub  { font-size:11px; color:#888; }
-    .rank-val  { font-weight:700; font-size:13px; color:#27ae60; }
+    .rank-no.gold   { background: #f59e0b; }
+    .rank-no.silver { background: #94a3b8; }
+    .rank-no.bronze { background: #b45309; }
+    .rank-info { flex: 1; min-width: 0; }
+    .rank-name { font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rank-sub  { font-size: 11px; color: var(--sub); }
+    .rank-val  { font-weight: 800; font-size: 13px; color: var(--green); }
 
-    .no-data { text-align:center; padding:40px 20px; color:#bbb; font-size:13px; }
+    /* ===== SETING ===== */
+    .set-group { margin: 10px; }
+    .set-group-title {
+      font-size: 10px; font-weight: 700; color: var(--sub);
+      text-transform: uppercase; letter-spacing: 1px;
+      padding: 10px 4px 6px;
+    }
+    .set-item {
+      display: flex; align-items: center; background: white;
+      padding: 14px 14px; border-radius: 12px; margin-bottom: 6px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04); gap: 12px;
+    }
+    .set-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .set-item-info { flex: 1; }
+    .set-item-title { font-size: 14px; font-weight: 700; }
+    .set-item-sub   { font-size: 11px; color: var(--sub); margin-top: 1px; }
+    .set-item-arrow { color: var(--border); font-size: 14px; }
+
+    .set-form { margin: 10px; background: white; border-radius: 14px; padding: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .set-form-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+    .set-form input { margin-bottom: 8px; }
+    .set-form textarea {
+      width: 100%; padding: 11px 12px; border: 1.5px solid var(--border);
+      border-radius: 10px; font-size: 14px; font-family: inherit;
+      outline: none; resize: vertical; min-height: 80px;
+      transition: border-color 0.15s;
+    }
+    .set-form textarea:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(22,163,74,0.12); }
+    .set-info-box {
+      background: var(--green-light); border-radius: 12px; padding: 14px;
+      margin: 10px; font-size: 13px; color: var(--green);
+    }
+    .set-info-box b { font-weight: 700; }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed; bottom: calc(var(--nav-h) + 16px); left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: #111827; color: white; padding: 10px 20px;
+      border-radius: 24px; font-size: 13px; font-weight: 600;
+      opacity: 0; transition: all 0.25s; z-index: 200;
+      pointer-events: none; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ===== EMPTY / NO DATA ===== */
+    .empty-state {
+      text-align: center; padding: 40px 20px;
+      color: #cbd5e1; font-size: 13px; font-weight: 600;
+    }
+    .empty-state .empty-icon { font-size: 36px; margin-bottom: 8px; }
+    .no-data { text-align: center; padding: 30px; color: #cbd5e1; font-size: 13px; }
+
+    /* ===== RIWAYAT on nota page ===== */
+    .riwayat-item {
+      background: white; border-radius: 12px; padding: 12px 14px;
+      margin-bottom: 8px; display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05); cursor: pointer;
+    }
+    .riwayat-item:active { opacity: 0.7; }
+    .riwayat-avatar {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: var(--green-light); color: var(--green);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 13px; flex-shrink: 0;
+    }
+    .riwayat-info { flex: 1; min-width: 0; }
+    .riwayat-name { font-weight: 700; font-size: 13px; }
+    .riwayat-date { font-size: 11px; color: var(--sub); }
+    .riwayat-total { font-weight: 800; font-size: 13px; color: var(--green); }
+    .riwayat-del { font-size: 16px; color: var(--red); padding: 4px; cursor: pointer; }
   </style>
 </head>
 <body>
-
 <div class="app">
-  <div class="header">🧾 Nota Penjualan</div>
 
-  <div class="tab-nav">
-    <button class="tab-btn active" onclick="switchTab('nota',this)">📝 Nota</button>
-    <button class="tab-btn"       onclick="switchTab('customer',this)">👥 Customer</button>
-    <button class="tab-btn"       onclick="switchTab('produk',this)">📦 Produk</button>
-    <button class="tab-btn"       onclick="switchTab('transaksi',this)">🧾 Transaksi</button>
-    <button class="tab-btn"       onclick="switchTab('laporan',this)">📊 Laporan</button>
+  <!-- ===== HEADER ===== -->
+  <div class="header" id="main-header">
+    <div>
+      <div class="header-title" id="header-title">🧾 Nota</div>
+      <div class="header-sub" id="header-sub">Input transaksi</div>
+    </div>
+    <div class="header-right" id="header-right"></div>
   </div>
 
-  <!-- PAGE NOTA -->
+  <!-- ===== PAGE: NOTA ===== -->
   <div id="page-nota" class="page active">
     <div class="card">
-      <div class="grid">
+      <div class="form-grid">
         <div class="input-wrap full">
-          <input id="customer" placeholder="Nama Customer" autocomplete="off"
-            oninput="searchCustomer(this.value)" onfocus="searchCustomer(this.value)"
-            onblur="setTimeout(()=>closeDropdown('dd-customer'),200)">
+          <input id="customer" placeholder="👤 Nama Customer" autocomplete="off">
           <div class="dropdown" id="dd-customer"></div>
         </div>
-        <input id="alamat" class="full" placeholder="Alamat">
-        <input id="hp"     class="full" placeholder="No HP">
+        <input id="alamat" class="full" placeholder="📍 Alamat">
+        <input id="hp" class="full" placeholder="📞 No HP">
         <div class="input-wrap full">
-          <input id="nama" placeholder="Nama barang" autocomplete="off"
-            oninput="searchProduk(this.value)" onfocus="searchProduk(this.value)"
-            onblur="setTimeout(()=>closeDropdown('dd-produk'),200)">
+          <input id="nama" placeholder="📦 Nama Barang" autocomplete="off">
           <div class="dropdown" id="dd-produk"></div>
         </div>
         <input id="qty"   type="number" placeholder="Qty">
@@ -280,115 +447,209 @@
     <div class="card">
       <table>
         <thead>
-          <tr><th>No</th><th style="text-align:left">Item</th><th>Qty</th><th>Harga</th><th>Total</th><th>Aksi</th></tr>
+          <tr><th>#</th><th>Item</th><th>Qty</th><th>Harga</th><th>Total</th><th>Aksi</th></tr>
         </thead>
         <tbody id="list"></tbody>
       </table>
-      <div class="total-row"><span>Total</span><span>Rp <span id="total">0</span></span></div>
-      <div class="total-row"><span>Total Qty</span><span><span id="totalQty">0</span></span></div>
+      <div class="total-section">
+        <div class="total-row"><span class="label">Total Qty</span><span id="totalQty" style="font-weight:800">0</span></div>
+        <div class="total-row"><span class="label">Total</span><span class="value">Rp <span id="total">0</span></span></div>
+      </div>
     </div>
 
-    <div class="history">
-      <h3 style="padding:4px 0 8px;font-size:14px;color:#555;">📂 Riwayat Nota</h3>
+    <div style="padding:0 10px">
+      <div class="section-label">📂 Riwayat Nota</div>
       <div id="riwayat"></div>
     </div>
   </div>
 
-  <!-- PAGE CUSTOMER -->
-  <div id="page-customer" class="page">
-    <div class="form-add">
-      <div class="section-title">➕ Tambah / Edit Customer</div>
-      <input id="fc-nama"   placeholder="Nama Customer" style="margin-top:8px">
-      <input id="fc-alamat" placeholder="Alamat">
-      <input id="fc-hp"     placeholder="No HP">
-      <input type="hidden"  id="fc-id">
-      <button onclick="saveCustomer()">💾 Simpan Customer</button>
-    </div>
-    <div class="section-title">👥 Daftar Customer</div>
-    <div id="list-customer"><div class="empty-state">Belum ada data customer</div></div>
-  </div>
-
-  <!-- PAGE PRODUK -->
-  <div id="page-produk" class="page">
-    <div class="form-add">
-      <div class="section-title">➕ Tambah / Edit Produk</div>
-      <input id="fp-nama"  placeholder="Nama Produk" style="margin-top:8px">
-      <input id="fp-harga" type="number" placeholder="Harga Default">
-      <input type="hidden" id="fp-id">
-      <button onclick="saveProduk()">💾 Simpan Produk</button>
-    </div>
-    <div class="section-title">📦 Daftar Produk</div>
-    <div id="list-produk"><div class="empty-state">Belum ada data produk</div></div>
-  </div>
-
-  <!-- PAGE TRANSAKSI -->
-  <div id="page-transaksi" class="page">
-    <div class="filter-bar">
-      <input type="date" id="trx-dari">
-      <input type="date" id="trx-sampai">
-      <input id="trx-search" placeholder="🔍 Nama customer..." oninput="renderTrx()" style="flex:2;min-width:130px;">
-      <button onclick="renderTrx()">Filter</button>
-    </div>
-    <div class="trx-summary">
-      <div class="trx-sum-card"><div class="val" id="trx-cnt">0</div><div class="lbl">Total Nota</div></div>
-      <div class="trx-sum-card"><div class="val" id="trx-omz">Rp 0</div><div class="lbl">Total Omzet</div></div>
-      <div class="trx-sum-card"><div class="val" id="trx-qty">0</div><div class="lbl">Item Terjual</div></div>
-    </div>
-    <div id="trx-list"></div>
-  </div>
-
-  <!-- PAGE LAPORAN -->
-  <div id="page-laporan" class="page">
-    <div class="lap-filter">
-      <select id="lap-periode" onchange="changePeriode()">
-        <option value="hari">Hari Ini</option>
-        <option value="minggu">7 Hari Terakhir</option>
-        <option value="bulan" selected>Bulan Ini</option>
-        <option value="tahun">Tahun Ini</option>
-        <option value="custom">Custom Bulan</option>
-      </select>
-      <input type="month" id="lap-bulan"  style="display:none" onchange="renderLaporan()">
-      <input type="number" id="lap-tahun" placeholder="Tahun" style="display:none;width:90px" onchange="renderLaporan()">
+  <!-- ===== PAGE: MASTER (Customer & Produk) ===== -->
+  <div id="page-master" class="page">
+    <!-- Sub tab inside master -->
+    <div class="tab-sub" style="margin-top:10px">
+      <button class="tab-sub-btn active" onclick="switchMaster('customer',this)">👥 Customer</button>
+      <button class="tab-sub-btn" onclick="switchMaster('produk',this)">📦 Produk</button>
     </div>
 
-    <div class="stat-grid">
-      <div class="stat-card green">  <div class="sval" id="lap-omzet">Rp 0</div><div class="slbl">Total Omzet</div></div>
-      <div class="stat-card blue">   <div class="sval" id="lap-nota">0</div>   <div class="slbl">Jumlah Nota</div></div>
-      <div class="stat-card orange"> <div class="sval" id="lap-qty">0</div>    <div class="slbl">Item Terjual</div></div>
-      <div class="stat-card purple"> <div class="sval" id="lap-avg">Rp 0</div><div class="slbl">Rata-rata/Nota</div></div>
+    <!-- Customer sub -->
+    <div id="master-customer" class="sub-page active">
+      <div class="form-add">
+        <div class="form-add-title">➕ Tambah / Edit Customer</div>
+        <input id="fc-nama"   placeholder="Nama Customer">
+        <input id="fc-alamat" placeholder="Alamat" style="margin-top:8px">
+        <input id="fc-hp"     placeholder="No HP" style="margin-top:8px">
+        <input type="hidden"  id="fc-id">
+        <button class="btn btn-green btn-full" style="margin-top:10px" onclick="saveCustomer()">💾 Simpan Customer</button>
+      </div>
+      <div class="section-label">Daftar Customer</div>
+      <div class="db-list" id="list-customer">
+        <div class="empty-state"><div class="empty-icon">👥</div>Belum ada data customer</div>
+      </div>
     </div>
 
-    <div class="tab-sub">
-      <button class="active" onclick="switchSub('grafik',this)">📈 Grafik</button>
-      <button onclick="switchSub('produk-rank',this)">🏆 Top Produk</button>
-      <button onclick="switchSub('customer-rank',this)">⭐ Top Customer</button>
-    </div>
-
-    <div id="sub-grafik" class="sub-page active">
-      <div class="chart-card"><h4>📊 Omzet Harian</h4><canvas id="chartOmzet" height="180"></canvas></div>
-      <div class="chart-card"><h4>🥧 Komposisi Produk (Top 5)</h4><canvas id="chartProduk" height="220"></canvas></div>
-    </div>
-
-    <div id="sub-produk-rank" class="sub-page">
-      <div class="section-title">🏆 Produk Terlaris</div>
-      <div class="rank-list" id="lap-produk-rank"></div>
-    </div>
-
-    <div id="sub-customer-rank" class="sub-page">
-      <div class="section-title">⭐ Customer Terbaik</div>
-      <div class="rank-list" id="lap-customer-rank"></div>
+    <!-- Produk sub -->
+    <div id="master-produk" class="sub-page">
+      <div class="form-add">
+        <div class="form-add-title">➕ Tambah / Edit Produk</div>
+        <input id="fp-nama"  placeholder="Nama Produk">
+        <input id="fp-harga" type="number" placeholder="Harga Default" style="margin-top:8px">
+        <input type="hidden" id="fp-id">
+        <button class="btn btn-green btn-full" style="margin-top:10px" onclick="saveProduk()">💾 Simpan Produk</button>
+      </div>
+      <div class="section-label">Daftar Produk</div>
+      <div class="db-list" id="list-produk">
+        <div class="empty-state"><div class="empty-icon">📦</div>Belum ada data produk</div>
+      </div>
     </div>
   </div>
 
+  <!-- ===== PAGE: TRANSAKSI & LAPORAN ===== -->
+  <div id="page-trxlap" class="page">
+    <div class="tab-sub" style="margin-top:10px">
+      <button class="tab-sub-btn active" onclick="switchTrxLap('transaksi',this)">🧾 Transaksi</button>
+      <button class="tab-sub-btn" onclick="switchTrxLap('laporan',this)">📊 Laporan</button>
+    </div>
+
+    <!-- TRANSAKSI -->
+    <div id="trxlap-transaksi" class="sub-page active">
+      <div class="filter-card">
+        <div class="filter-row" style="margin-bottom:8px">
+          <input type="date" id="trx-dari">
+          <input type="date" id="trx-sampai">
+        </div>
+        <div class="filter-row">
+          <input id="trx-search" placeholder="🔍 Nama customer..." style="flex:2">
+          <button class="btn btn-green" onclick="renderTrx()" style="flex:0 0 auto;padding:10px 14px">Filter</button>
+        </div>
+      </div>
+      <div class="summary-row">
+        <div class="sum-card"><div class="sum-val" id="trx-cnt">0</div><div class="sum-lbl">Nota</div></div>
+        <div class="sum-card"><div class="sum-val" id="trx-omz">Rp 0</div><div class="sum-lbl">Omzet</div></div>
+        <div class="sum-card"><div class="sum-val" id="trx-qty">0</div><div class="sum-lbl">Item</div></div>
+      </div>
+      <div id="trx-list"></div>
+    </div>
+
+    <!-- LAPORAN -->
+    <div id="trxlap-laporan" class="sub-page">
+      <div class="filter-card">
+        <div class="filter-row">
+          <select id="lap-periode" onchange="changePeriode()">
+            <option value="hari">Hari Ini</option>
+            <option value="minggu">7 Hari Terakhir</option>
+            <option value="bulan" selected>Bulan Ini</option>
+            <option value="tahun">Tahun Ini</option>
+            <option value="custom">Custom Bulan</option>
+          </select>
+          <input type="month" id="lap-bulan" style="display:none" onchange="renderLaporan()">
+          <input type="number" id="lap-tahun" placeholder="Tahun" style="display:none;max-width:90px" onchange="renderLaporan()">
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card green">  <div class="stat-val" id="lap-omzet">Rp 0</div><div class="stat-lbl">Total Omzet</div></div>
+        <div class="stat-card blue">   <div class="stat-val" id="lap-nota">0</div>   <div class="stat-lbl">Jumlah Nota</div></div>
+        <div class="stat-card orange"> <div class="stat-val" id="lap-qty">0</div>    <div class="stat-lbl">Item Terjual</div></div>
+        <div class="stat-card purple"> <div class="stat-val" id="lap-avg">Rp 0</div><div class="stat-lbl">Rata-rata/Nota</div></div>
+      </div>
+
+      <div class="tab-sub">
+        <button class="tab-sub-btn active" onclick="switchSub('grafik',this)">📈 Grafik</button>
+        <button class="tab-sub-btn" onclick="switchSub('produk-rank',this)">🏆 Top Produk</button>
+        <button class="tab-sub-btn" onclick="switchSub('customer-rank',this)">⭐ Top Customer</button>
+      </div>
+
+      <div id="sub-grafik" class="sub-page active">
+        <div class="chart-card"><div class="chart-title">📊 Omzet Harian</div><canvas id="chartOmzet" height="180"></canvas></div>
+        <div class="chart-card"><div class="chart-title">🥧 Komposisi Produk (Top 5)</div><canvas id="chartProduk" height="220"></canvas></div>
+      </div>
+      <div id="sub-produk-rank" class="sub-page">
+        <div class="section-label">🏆 Produk Terlaris</div>
+        <div class="rank-list" id="lap-produk-rank"></div>
+      </div>
+      <div id="sub-customer-rank" class="sub-page">
+        <div class="section-label">⭐ Customer Terbaik</div>
+        <div class="rank-list" id="lap-customer-rank"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE: SETING ===== -->
+  <div id="page-seting" class="page">
+    <div class="set-form" style="margin-top:10px">
+      <div class="set-form-title">🏪 Informasi Toko</div>
+      <input id="set-nama-toko" placeholder="Nama Toko" style="margin-bottom:8px">
+      <input id="set-kontak"    placeholder="No HP / Contact" style="margin-bottom:8px">
+      <textarea id="set-rekening" placeholder="Info Transfer / Rekening"></textarea>
+      <textarea id="set-footer"   placeholder="Pesan Nota (footer)" style="margin-top:8px"></textarea>
+      <button class="btn btn-green btn-full" style="margin-top:10px" onclick="saveSeting()">💾 Simpan Pengaturan</button>
+    </div>
+
+    <div class="set-info-box" id="set-preview" style="display:none">
+      <b>Preview Footer Nota:</b><br>
+      <span id="set-preview-text"></span>
+    </div>
+
+    <div class="set-group">
+      <div class="set-group-title">Data & Backup</div>
+      <div class="set-item" onclick="exportData()">
+        <div class="set-icon" style="background:#dbeafe">📤</div>
+        <div class="set-item-info">
+          <div class="set-item-title">Export Data</div>
+          <div class="set-item-sub">Download semua nota sebagai JSON</div>
+        </div>
+        <div class="set-item-arrow">›</div>
+      </div>
+      <div class="set-item" onclick="clearAllData()">
+        <div class="set-icon" style="background:#fee2e2">🗑</div>
+        <div class="set-item-info">
+          <div class="set-item-title">Hapus Semua Data</div>
+          <div class="set-item-sub">Reset semua nota, customer, produk</div>
+        </div>
+        <div class="set-item-arrow">›</div>
+      </div>
+    </div>
+
+    <div class="set-group">
+      <div class="set-group-title">Aplikasi</div>
+      <div class="set-item">
+        <div class="set-icon" style="background:#f0fdf4">ℹ️</div>
+        <div class="set-item-info">
+          <div class="set-item-title">Versi Aplikasi</div>
+          <div class="set-item-sub">Nota Penjualan v2.0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end .app -->
+
+<!-- ===== BOTTOM NAV ===== -->
+<div class="bottom-nav">
+  <button class="nav-btn active" onclick="goPage('nota',this)">
+    <span class="nav-icon">🧾</span>
+    <span class="nav-label">Nota</span>
+  </button>
+  <button class="nav-btn" onclick="goPage('master',this)">
+    <span class="nav-icon">📋</span>
+    <span class="nav-label">Master</span>
+  </button>
+  <button class="nav-btn" onclick="goPage('trxlap',this)">
+    <span class="nav-icon">📊</span>
+    <span class="nav-label">Laporan</span>
+  </button>
+  <button class="nav-btn" onclick="goPage('seting',this)">
+    <span class="nav-icon">⚙️</span>
+    <span class="nav-label">Seting</span>
+  </button>
 </div>
 
-<div class="bottom" id="bottom-bar">
-  <div class="bottom-inner">
-    <button class="btn-add"   onclick="tambah()">+ Item</button>
-    <button class="btn-save"  onclick="simpan()">💾</button>
-    <button class="btn-reset" onclick="resetForm()">🗑</button>
-    <button class="btn-shot"  onclick="screenshot()">📸</button>
-  </div>
+<!-- Fixed bottom action bar for Nota page -->
+<div class="nota-bottom-bar" id="nota-action-bar">
+  <button class="btn btn-green" onclick="tambah()">+ Item</button>
+  <button class="btn btn-blue"  onclick="simpan()">💾 Simpan</button>
+  <button class="btn btn-red"   onclick="resetForm()">🗑 Reset</button>
+  <button class="btn btn-purple" onclick="screenshot()">📸 Nota</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -405,7 +666,6 @@ const firebaseConfig = {
   authDomain: "test-4dfeb.firebaseapp.com",
   projectId: "test-4dfeb"
 };
-
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 
@@ -416,11 +676,13 @@ let produks   = [];
 let allNotas  = [];
 let chartOmzet  = null;
 let chartProduk = null;
+let seting = {};
 
-// HELPERS
+// ===== HELPERS =====
 function rupiah(x){ return Number(x||0).toLocaleString("id-ID"); }
 function isoDate(d){ return d.toISOString().split("T")[0]; }
 function medal(i){ return i===0?"gold":i===1?"silver":i===2?"bronze":""; }
+function initials(name){ return (name||"?").substring(0,2).toUpperCase(); }
 
 window.showToast = function(msg){
   const t=document.getElementById("toast");
@@ -428,26 +690,59 @@ window.showToast = function(msg){
   setTimeout(()=>t.classList.remove("show"),2500);
 };
 
-// TAB
-window.switchTab = function(tab, el){
-  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-  document.getElementById("page-"+tab).classList.add("active");
-  el.classList.add("active");
-  document.getElementById("bottom-bar").style.display = tab==="nota"?"flex":"none";
-  if(tab==="transaksi") renderTrx();
-  if(tab==="laporan")   renderLaporan();
+// ===== PAGE NAVIGATION =====
+const pageHeaders = {
+  nota:   { title:"🧾 Nota",      sub:"Input transaksi" },
+  master: { title:"📋 Master Data", sub:"Customer & Produk" },
+  trxlap: { title:"📊 Transaksi",  sub:"& Laporan Penjualan" },
+  seting: { title:"⚙️ Pengaturan", sub:"Konfigurasi aplikasi" },
 };
 
-window.switchSub = function(id, el){
-  document.querySelectorAll(".sub-page").forEach(p=>p.classList.remove("active"));
-  document.querySelectorAll(".tab-sub button").forEach(b=>b.classList.remove("active"));
+window.goPage = function(page, btn){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+  document.getElementById("page-"+page).classList.add("active");
+  btn.classList.add("active");
+  // update header
+  const h=pageHeaders[page];
+  document.getElementById("header-title").innerText=h.title;
+  document.getElementById("header-sub").innerText=h.sub;
+  // show/hide nota action bar
+  const bar=document.getElementById("nota-action-bar");
+  bar.classList.toggle("hidden", page!=="nota");
+  // trigger render on demand
+  if(page==="trxlap"){ const sub=document.querySelector("#trxlap-transaksi.active"); if(sub) renderTrx(); else renderLaporan(); }
+  window.scrollTo(0,0);
+};
+
+// ===== MASTER SUB TABS =====
+window.switchMaster = function(id, btn){
+  document.querySelectorAll("#page-master .sub-page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll("#page-master .tab-sub-btn").forEach(b=>b.classList.remove("active"));
+  document.getElementById("master-"+id).classList.add("active");
+  btn.classList.add("active");
+};
+
+// ===== TRANSAKSI / LAPORAN SUB TABS =====
+window.switchTrxLap = function(id, btn){
+  document.querySelectorAll("#page-trxlap > .sub-page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll("#page-trxlap > .tab-sub .tab-sub-btn").forEach(b=>b.classList.remove("active"));
+  document.getElementById("trxlap-"+id).classList.add("active");
+  btn.classList.add("active");
+  document.getElementById("header-sub").innerText = id==="transaksi"?"& Laporan Penjualan":"Statistik & Grafik";
+  if(id==="transaksi") renderTrx();
+  else renderLaporan();
+};
+
+window.switchSub = function(id, btn){
+  document.querySelectorAll(".sub-page[id^='sub-']").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll("#trxlap-laporan .tab-sub .tab-sub-btn").forEach(b=>b.classList.remove("active"));
   document.getElementById("sub-"+id).classList.add("active");
-  el.classList.add("active");
+  btn.classList.add("active");
   if(id==="grafik") setTimeout(renderLaporan,50);
 };
 
-// AUTOCOMPLETE
+// ===== AUTOCOMPLETE =====
 window.searchCustomer = function(val){
   const dd=document.getElementById("dd-customer");
   const list=val ? customers.filter(c=>c.nama.toLowerCase().includes(val.toLowerCase())||c.hp.includes(val)) : customers;
@@ -455,15 +750,15 @@ window.searchCustomer = function(val){
   dd.innerHTML=list.map(c=>`
     <div class="dropdown-item" onmousedown="pilihCustomer('${c.id}')">
       <div class="item-main">${c.nama}</div>
-      <div class="item-sub">${c.alamat} • ${c.hp}</div>
+      <div class="item-sub">${c.alamat||""} • ${c.hp||""}</div>
     </div>`).join("");
   dd.classList.add("show");
 };
 window.pilihCustomer = function(id){
   const c=customers.find(x=>x.id===id); if(!c) return;
   document.getElementById("customer").value=c.nama;
-  document.getElementById("alamat").value=c.alamat;
-  document.getElementById("hp").value=c.hp;
+  document.getElementById("alamat").value=c.alamat||"";
+  document.getElementById("hp").value=c.hp||"";
   closeDropdown("dd-customer");
 };
 window.searchProduk = function(val){
@@ -486,7 +781,15 @@ window.pilihProduk = function(id){
 };
 window.closeDropdown = function(id){ document.getElementById(id).classList.remove("show"); };
 
-// NOTA
+// bind input events after DOM ready
+document.getElementById("customer").addEventListener("input", e=>searchCustomer(e.target.value));
+document.getElementById("customer").addEventListener("focus", e=>searchCustomer(e.target.value));
+document.getElementById("customer").addEventListener("blur", ()=>setTimeout(()=>closeDropdown("dd-customer"),200));
+document.getElementById("nama").addEventListener("input", e=>searchProduk(e.target.value));
+document.getElementById("nama").addEventListener("focus", e=>searchProduk(e.target.value));
+document.getElementById("nama").addEventListener("blur", ()=>setTimeout(()=>closeDropdown("dd-produk"),200));
+
+// ===== NOTA: TAMBAH ITEM =====
 window.tambah = function(){
   const nama=document.getElementById("nama").value;
   const qty=Number(document.getElementById("qty").value);
@@ -500,12 +803,15 @@ window.tambah = function(){
 
 function render(){
   let html="",total=0,totalQty=0;
-  items.forEach((i,idx)=>{
-    total+=i.total; totalQty+=i.qty;
+  items.forEach((it,idx)=>{
+    total+=it.total; totalQty+=it.qty;
     html+=`<tr>
-      <td>${idx+1}</td><td style="text-align:left">${i.nama}</td>
-      <td>${i.qty}</td><td>${rupiah(i.harga)}</td><td>${rupiah(i.total)}</td>
-      <td><span class="aksi edit" onclick="editItem(${idx})">Edit</span> | <span class="aksi" onclick="hapusItem(${idx})">Hapus</span></td>
+      <td>${idx+1}</td><td>${it.nama}</td>
+      <td>${it.qty}</td><td>${rupiah(it.harga)}</td><td>${rupiah(it.total)}</td>
+      <td><div class="aksi-btns">
+        <button class="aksi-btn aksi-edit" onclick="editItem(${idx})">✏️</button>
+        <button class="aksi-btn aksi-del" onclick="hapusItem(${idx})">🗑</button>
+      </div></td>
     </tr>`;
   });
   document.getElementById("list").innerHTML=html;
@@ -520,10 +826,12 @@ window.editItem = function(i){
   item.qty=Number(qty); item.harga=Number(harga); item.total=item.qty*item.harga; render();
 };
 window.hapusItem = function(i){ if(confirm("Hapus item?")){ items.splice(i,1); render(); } };
+
 window.resetForm = function(){
   items=[]; editId=null; render();
   ["customer","alamat","hp"].forEach(id=>document.getElementById(id).value="");
 };
+
 window.simpan = async function(){
   if(!items.length) return showToast("⚠️ Tidak ada item!");
   const total=items.reduce((a,b)=>a+b.total,0);
@@ -532,60 +840,70 @@ window.simpan = async function(){
   const hp=document.getElementById("hp").value;
   if(editId){
     await updateDoc(doc(db,"NOTA",editId),{items,total,customer,alamat,hp});
-    showToast("✅ Nota diupdate");
+    editId=null; showToast("✅ Nota diupdate");
   } else {
     await addDoc(collection(db,"NOTA"),{items,total,customer,alamat,hp,tanggal:serverTimestamp()});
     if(customer){
       const ex=customers.find(c=>c.nama.toLowerCase()===customer.toLowerCase());
-      if(!ex){ await addDoc(collection(db,"CUSTOMER"),{nama:customer,alamat:alamat||"",hp:hp||""}); showToast("✅ Nota tersimpan + customer baru"); }
+      if(!ex){ await addDoc(collection(db,"CUSTOMER"),{nama:customer,alamat:alamat||"",hp:hp||""}); showToast("✅ Nota + customer baru disimpan"); }
       else showToast("✅ Nota tersimpan");
     } else showToast("✅ Nota tersimpan");
   }
   resetForm();
 };
 
-// RIWAYAT
+// ===== RIWAYAT (on nota page) =====
 onSnapshot(collection(db,"NOTA"), snap=>{
   allNotas=[];
-  let html="";
   snap.forEach(d=>{
     const data=d.data();
     const tgl=data.tanggal ? new Date(data.tanggal.seconds*1000) : null;
     allNotas.push({id:d.id,...data,tglObj:tgl});
-    html+=`
-<div class="history-item">
-  <div onclick="loadNota('${d.id}')">
-    ${data.customer?`<b>${data.customer}</b><br>`:""}
-    Rp ${rupiah(data.total)}<br><small>${tgl?tgl.toLocaleString():"-"}</small>
-  </div>
-  <div style="color:red;font-size:12px;margin-top:5px" onclick="hapusNota('${d.id}')">🗑 Hapus</div>
-</div>`;
   });
-  document.getElementById("riwayat").innerHTML=html||"<div class='empty-state'>Belum ada riwayat</div>";
+  allNotas.sort((a,b)=>(b.tglObj||0)-(a.tglObj||0));
+  renderRiwayat();
+  renderTrx();
 });
+
+function renderRiwayat(){
+  const el=document.getElementById("riwayat");
+  if(!allNotas.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">📂</div>Belum ada riwayat</div>'; return; }
+  el.innerHTML=allNotas.slice(0,15).map(n=>`
+    <div class="riwayat-item" onclick="loadNota('${n.id}')">
+      <div class="riwayat-avatar">${initials(n.customer)}</div>
+      <div class="riwayat-info">
+        <div class="riwayat-name">${n.customer||"(no name)"}</div>
+        <div class="riwayat-date">${n.tglObj?n.tglObj.toLocaleString("id-ID"):"-"}</div>
+      </div>
+      <div class="riwayat-total">Rp ${rupiah(n.total)}</div>
+      <div class="riwayat-del" onclick="event.stopPropagation();hapusNota('${n.id}')">🗑</div>
+    </div>`).join("");
+}
 
 window.loadNota = async function(id){
   const snap=await getDoc(doc(db,"NOTA",id));
   if(snap.exists()){
-    const data=snap.data(); items=data.items; editId=id;
+    const data=snap.data(); items=data.items||[]; editId=id;
     document.getElementById("customer").value=data.customer||"";
     document.getElementById("alamat").value=data.alamat||"";
     document.getElementById("hp").value=data.hp||"";
     render();
+    // go to nota page
     document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
     document.getElementById("page-nota").classList.add("active");
-    document.querySelector(".tab-btn").classList.add("active");
-    document.getElementById("bottom-bar").style.display="flex";
+    document.querySelector(".nav-btn").classList.add("active");
+    document.getElementById("nota-action-bar").classList.remove("hidden");
+    document.getElementById("header-title").innerText=pageHeaders.nota.title;
+    document.getElementById("header-sub").innerText=pageHeaders.nota.sub;
+    window.scrollTo(0,0);
   }
 };
 window.hapusNota = async function(id){
-  if(confirm("Hapus nota?")){
-    await deleteDoc(doc(db,"NOTA",id)); showToast("🗑 Nota dihapus");
-  }
+  if(confirm("Hapus nota?")){ await deleteDoc(doc(db,"NOTA",id)); showToast("🗑 Nota dihapus"); }
 };
 
-// CUSTOMER DB
+// ===== CUSTOMER DB =====
 onSnapshot(collection(db,"CUSTOMER"), snap=>{
   customers=[];
   snap.forEach(d=>customers.push({id:d.id,...d.data()}));
@@ -593,17 +911,17 @@ onSnapshot(collection(db,"CUSTOMER"), snap=>{
 });
 function renderCustomerList(){
   const el=document.getElementById("list-customer");
-  if(!customers.length){ el.innerHTML="<div class='empty-state'>Belum ada data customer</div>"; return; }
+  if(!customers.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">👥</div>Belum ada data customer</div>'; return; }
   el.innerHTML=customers.map(c=>`
     <div class="db-item">
-      <div class="db-item-info">
-        <div class="db-item-name">${c.nama}</div>
-        <div class="db-item-sub">${c.alamat}</div>
-        <div class="db-item-sub">${c.hp}</div>
+      <div class="db-icon">${initials(c.nama)}</div>
+      <div class="db-info">
+        <div class="db-name">${c.nama}</div>
+        <div class="db-sub">${c.alamat||""} ${c.hp?`• ${c.hp}`:""}</div>
       </div>
       <div class="db-actions">
-        <span class="db-edit" onclick="editCustomer('${c.id}')">✏️</span>
-        <span class="db-del"  onclick="delCustomer('${c.id}')">🗑</span>
+        <span class="db-edit-btn" onclick="editCustomer('${c.id}')">✏️</span>
+        <span class="db-del-btn"  onclick="delCustomer('${c.id}')">🗑</span>
       </div>
     </div>`).join("");
 }
@@ -620,16 +938,19 @@ window.saveCustomer = async function(){
 window.editCustomer = function(id){
   const c=customers.find(x=>x.id===id); if(!c) return;
   document.getElementById("fc-nama").value=c.nama;
-  document.getElementById("fc-alamat").value=c.alamat;
-  document.getElementById("fc-hp").value=c.hp;
+  document.getElementById("fc-alamat").value=c.alamat||"";
+  document.getElementById("fc-hp").value=c.hp||"";
   document.getElementById("fc-id").value=c.id;
+  // ensure customer sub is active
+  document.querySelectorAll("#page-master .sub-page").forEach(p=>p.classList.remove("active"));
+  document.getElementById("master-customer").classList.add("active");
   window.scrollTo(0,0);
 };
 window.delCustomer = async function(id){
   if(confirm("Hapus customer?")){ await deleteDoc(doc(db,"CUSTOMER",id)); showToast("🗑 Customer dihapus"); }
 };
 
-// PRODUK DB
+// ===== PRODUK DB =====
 onSnapshot(collection(db,"PRODUK"), snap=>{
   produks=[];
   snap.forEach(d=>produks.push({id:d.id,...d.data()}));
@@ -637,16 +958,17 @@ onSnapshot(collection(db,"PRODUK"), snap=>{
 });
 function renderProdukList(){
   const el=document.getElementById("list-produk");
-  if(!produks.length){ el.innerHTML="<div class='empty-state'>Belum ada data produk</div>"; return; }
+  if(!produks.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">📦</div>Belum ada data produk</div>'; return; }
   el.innerHTML=produks.map(p=>`
     <div class="db-item">
-      <div class="db-item-info">
-        <div class="db-item-name">${p.nama}</div>
-        <div class="db-item-price">Rp ${rupiah(p.harga)}</div>
+      <div class="db-icon blue">🛍️</div>
+      <div class="db-info">
+        <div class="db-name">${p.nama}</div>
+        <div class="db-price">Rp ${rupiah(p.harga)}</div>
       </div>
       <div class="db-actions">
-        <span class="db-edit" onclick="editProduk('${p.id}')">✏️</span>
-        <span class="db-del"  onclick="delProduk('${p.id}')">🗑</span>
+        <span class="db-edit-btn" onclick="editProduk('${p.id}')">✏️</span>
+        <span class="db-del-btn"  onclick="delProduk('${p.id}')">🗑</span>
       </div>
     </div>`).join("");
 }
@@ -664,6 +986,8 @@ window.editProduk = function(id){
   document.getElementById("fp-nama").value=p.nama;
   document.getElementById("fp-harga").value=p.harga;
   document.getElementById("fp-id").value=p.id;
+  document.querySelectorAll("#page-master .sub-page").forEach(pg=>pg.classList.remove("active"));
+  document.getElementById("master-produk").classList.add("active");
   window.scrollTo(0,0);
 };
 window.delProduk = async function(id){
@@ -672,10 +996,9 @@ window.delProduk = async function(id){
 
 // ===== TRANSAKSI =====
 window.renderTrx = function(){
-  const dari   =document.getElementById("trx-dari").value;
-  const sampai =document.getElementById("trx-sampai").value;
-  const search =document.getElementById("trx-search").value.toLowerCase();
-
+  const dari  =document.getElementById("trx-dari").value;
+  const sampai=document.getElementById("trx-sampai").value;
+  const search=document.getElementById("trx-search").value.toLowerCase();
   const filtered=allNotas.filter(n=>{
     if(!n.tglObj) return true;
     const d=isoDate(n.tglObj);
@@ -683,46 +1006,44 @@ window.renderTrx = function(){
     if(sampai && d>sampai) return false;
     if(search && !(n.customer||"").toLowerCase().includes(search)) return false;
     return true;
-  }).sort((a,b)=>(b.tglObj||0)-(a.tglObj||0));
-
+  });
   const totalOmzet=filtered.reduce((a,b)=>a+(b.total||0),0);
   const totalQty=filtered.reduce((a,b)=>a+(b.items||[]).reduce((x,y)=>x+y.qty,0),0);
   document.getElementById("trx-cnt").innerText=filtered.length;
   document.getElementById("trx-omz").innerText="Rp "+rupiah(totalOmzet);
   document.getElementById("trx-qty").innerText=totalQty;
-
   if(!filtered.length){
-    document.getElementById("trx-list").innerHTML="<div class='no-data'>📭 Tidak ada transaksi</div>";
+    document.getElementById("trx-list").innerHTML='<div class="no-data">📭 Tidak ada transaksi</div>';
     return;
   }
   document.getElementById("trx-list").innerHTML=filtered.map((n,i)=>{
     const tgl=n.tglObj?n.tglObj.toLocaleString("id-ID"):"-";
     const rows=(n.items||[]).map((it,j)=>`
-      <tr>
-        <td>${j+1}</td><td style="text-align:left">${it.nama}</td>
-        <td>${it.qty}</td><td>${rupiah(it.harga)}</td><td>${rupiah(it.total)}</td>
-      </tr>`).join("");
+      <tr><td>${j+1}</td><td>${it.nama}</td><td>${it.qty}</td><td>${rupiah(it.harga)}</td><td>${rupiah(it.total)}</td></tr>`).join("");
     return `
 <div class="trx-item">
   <div class="trx-head" onclick="toggleTrx('tb${i}','ar${i}')">
+    <div class="trx-avatar">${initials(n.customer)}</div>
     <div class="trx-info">
       <div class="trx-name">${n.customer||"(no name)"}</div>
       <div class="trx-date">${tgl}</div>
     </div>
-    <div class="trx-total">Rp ${rupiah(n.total)}</div>
-    <div class="trx-arrow" id="ar${i}">▼</div>
+    <div class="trx-right">
+      <div class="trx-total">Rp ${rupiah(n.total)}</div>
+      <div class="trx-arrow" id="ar${i}">▼</div>
+    </div>
   </div>
   <div class="trx-body" id="tb${i}">
     <table>
-      <thead><tr><th>No</th><th style="text-align:left">Item</th><th>Qty</th><th>Harga</th><th>Total</th></tr></thead>
+      <thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Harga</th><th>Total</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    <div style="font-size:12px;color:#888;margin-top:6px">
+    <div style="font-size:12px;color:var(--sub);margin-top:8px">
       Alamat: ${n.alamat||"-"} | HP: ${n.hp||"-"}
     </div>
     <div class="trx-actions">
-      <button class="btn-load"  onclick="loadNota('${n.id}')">✏️ Edit</button>
-      <button class="btn-hapus" onclick="hapusNota('${n.id}')">🗑 Hapus</button>
+      <button class="btn btn-blue"  onclick="loadNota('${n.id}')">✏️ Edit</button>
+      <button class="btn btn-red"   onclick="hapusNota('${n.id}')">🗑 Hapus</button>
     </div>
   </div>
 </div>`;
@@ -748,33 +1069,13 @@ window.renderLaporan = function(){
   const periode=document.getElementById("lap-periode").value;
   const now=new Date();
   let dari, sampai;
+  if(periode==="hari"){ dari=sampai=isoDate(now); }
+  else if(periode==="minggu"){ const s=new Date(now); s.setDate(s.getDate()-6); dari=isoDate(s); sampai=isoDate(now); }
+  else if(periode==="bulan"){ dari=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-01`; sampai=isoDate(now); }
+  else if(periode==="tahun"){ const ty=document.getElementById("lap-tahun").value||now.getFullYear(); dari=`${ty}-01-01`; sampai=`${ty}-12-31`; }
+  else { const bv=document.getElementById("lap-bulan").value; if(bv){ dari=bv+"-01"; const e=new Date(bv+"-01"); e.setMonth(e.getMonth()+1); e.setDate(e.getDate()-1); sampai=isoDate(e); } else { dari="2000-01-01"; sampai="2099-12-31"; } }
 
-  if(periode==="hari"){
-    dari=sampai=isoDate(now);
-  } else if(periode==="minggu"){
-    const s=new Date(now); s.setDate(s.getDate()-6);
-    dari=isoDate(s); sampai=isoDate(now);
-  } else if(periode==="bulan"){
-    dari=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-01`;
-    sampai=isoDate(now);
-  } else if(periode==="tahun"){
-    const ty=document.getElementById("lap-tahun").value||now.getFullYear();
-    dari=`${ty}-01-01`; sampai=`${ty}-12-31`;
-  } else {
-    const bv=document.getElementById("lap-bulan").value;
-    if(bv){
-      dari=bv+"-01";
-      const e=new Date(bv+"-01"); e.setMonth(e.getMonth()+1); e.setDate(e.getDate()-1);
-      sampai=isoDate(e);
-    } else { dari="2000-01-01"; sampai="2099-12-31"; }
-  }
-
-  const filtered=allNotas.filter(n=>{
-    if(!n.tglObj) return false;
-    const d=isoDate(n.tglObj);
-    return d>=dari && d<=sampai;
-  });
-
+  const filtered=allNotas.filter(n=>{ if(!n.tglObj) return false; const d=isoDate(n.tglObj); return d>=dari&&d<=sampai; });
   const omzet=filtered.reduce((a,b)=>a+(b.total||0),0);
   const nota=filtered.length;
   const qty=filtered.reduce((a,b)=>a+(b.items||[]).reduce((x,y)=>x+y.qty,0),0);
@@ -785,109 +1086,119 @@ window.renderLaporan = function(){
   document.getElementById("lap-qty").innerText=qty;
   document.getElementById("lap-avg").innerText="Rp "+rupiah(avg);
 
-  // Daily map
   const dayMap={};
   filtered.forEach(n=>{ const d=isoDate(n.tglObj); dayMap[d]=(dayMap[d]||0)+n.total; });
   const days=Object.keys(dayMap).sort();
-  const dayVal=days.map(d=>dayMap[d]);
 
-  // Produk map
   const produkMap={};
   filtered.forEach(n=>{ (n.items||[]).forEach(it=>{ if(!produkMap[it.nama]) produkMap[it.nama]={qty:0,total:0}; produkMap[it.nama].qty+=it.qty; produkMap[it.nama].total+=it.total; }); });
   const produkRank=Object.entries(produkMap).map(([nama,v])=>({nama,...v})).sort((a,b)=>b.total-a.total);
 
-  // Customer map
   const custMap={};
   filtered.forEach(n=>{ const nm=n.customer||"(no name)"; if(!custMap[nm]) custMap[nm]={nota:0,total:0}; custMap[nm].nota+=1; custMap[nm].total+=n.total; });
   const custRank=Object.entries(custMap).map(([nama,v])=>({nama,...v})).sort((a,b)=>b.total-a.total);
 
-  // Chart Bar Omzet
   if(document.getElementById("sub-grafik").classList.contains("active")){
     const ctx1=document.getElementById("chartOmzet").getContext("2d");
     if(chartOmzet) chartOmzet.destroy();
-    chartOmzet=new Chart(ctx1,{
-      type:"bar",
-      data:{
-        labels:days.map(d=>{ const p=d.split("-"); return `${p[2]}/${p[1]}`; }),
-        datasets:[{ label:"Omzet", data:dayVal, backgroundColor:"rgba(46,204,113,0.75)", borderRadius:6, borderSkipped:false }]
-      },
-      options:{
-        responsive:true,
-        plugins:{legend:{display:false}},
-        scales:{
-          y:{ ticks:{ callback:v=>"Rp "+rupiah(v), font:{size:10} } },
-          x:{ ticks:{ font:{size:10} } }
-        }
-      }
-    });
-
-    // Chart Doughnut Produk
+    chartOmzet=new Chart(ctx1,{ type:"bar", data:{ labels:days.map(d=>{const p=d.split("-");return `${p[2]}/${p[1]}`;}), datasets:[{ label:"Omzet", data:days.map(d=>dayMap[d]), backgroundColor:"rgba(22,163,74,0.75)", borderRadius:6, borderSkipped:false }] }, options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>"Rp "+rupiah(v),font:{size:10}}},x:{ticks:{font:{size:10}}}} } });
     const ctx2=document.getElementById("chartProduk").getContext("2d");
     if(chartProduk) chartProduk.destroy();
     const top5=produkRank.slice(0,5);
-    const colors=["#2ecc71","#3498db","#e67e22","#9b59b6","#e74c3c"];
-    chartProduk=new Chart(ctx2,{
-      type:"doughnut",
-      data:{
-        labels:top5.map(p=>p.nama),
-        datasets:[{ data:top5.map(p=>p.total), backgroundColor:colors, borderWidth:2 }]
-      },
-      options:{
-        responsive:true,
-        plugins:{ legend:{ position:"bottom", labels:{ font:{size:11} } } }
-      }
-    });
+    const colors=["#16a34a","#2563eb","#ea580c","#7c3aed","#dc2626"];
+    chartProduk=new Chart(ctx2,{ type:"doughnut", data:{ labels:top5.map(p=>p.nama), datasets:[{ data:top5.map(p=>p.total), backgroundColor:colors, borderWidth:2 }] }, options:{ responsive:true, plugins:{legend:{position:"bottom",labels:{font:{size:11}}}} } });
   }
 
-  // Rank lists
   document.getElementById("lap-produk-rank").innerHTML=produkRank.length
-    ? produkRank.slice(0,10).map((p,i)=>`
-      <div class="rank-item">
-        <div class="rank-no ${medal(i)}">${i+1}</div>
-        <div class="rank-info"><div class="rank-name">${p.nama}</div><div class="rank-sub">${p.qty} item terjual</div></div>
-        <div class="rank-val">Rp ${rupiah(p.total)}</div>
-      </div>`).join("")
+    ? produkRank.slice(0,10).map((p,i)=>`<div class="rank-item"><div class="rank-no ${medal(i)}">${i+1}</div><div class="rank-info"><div class="rank-name">${p.nama}</div><div class="rank-sub">${p.qty} item terjual</div></div><div class="rank-val">Rp ${rupiah(p.total)}</div></div>`).join("")
     : "<div class='no-data'>Belum ada data</div>";
 
   document.getElementById("lap-customer-rank").innerHTML=custRank.length
-    ? custRank.slice(0,10).map((c,i)=>`
-      <div class="rank-item">
-        <div class="rank-no ${medal(i)}">${i+1}</div>
-        <div class="rank-info"><div class="rank-name">${c.nama}</div><div class="rank-sub">${c.nota} nota</div></div>
-        <div class="rank-val">Rp ${rupiah(c.total)}</div>
-      </div>`).join("")
+    ? custRank.slice(0,10).map((c,i)=>`<div class="rank-item"><div class="rank-no ${medal(i)}">${i+1}</div><div class="rank-info"><div class="rank-name">${c.nama}</div><div class="rank-sub">${c.nota} nota</div></div><div class="rank-val">Rp ${rupiah(c.total)}</div></div>`).join("")
     : "<div class='no-data'>Belum ada data</div>";
 };
 
-// SCREENSHOT
-window.screenshot = function(){
-  let total=items.reduce((a,b)=>a+b.total,0);
-  let now=new Date();
-  let customer=document.getElementById("customer").value||"-";
-  let alamat=document.getElementById("alamat").value||"-";
-  let hp=document.getElementById("hp").value||"-";
+// ===== SETING =====
+function loadSeting(){
+  try { seting=JSON.parse(localStorage.getItem("nota-seting")||"{}"); } catch(e){ seting={}; }
+  document.getElementById("set-nama-toko").value=seting.namaToko||"";
+  document.getElementById("set-kontak").value=seting.kontak||"";
+  document.getElementById("set-rekening").value=seting.rekening||"";
+  document.getElementById("set-footer").value=seting.footer||"";
+  updateSetingPreview();
+}
+function updateSetingPreview(){
+  const t=seting.footer||seting.rekening;
+  if(t){
+    document.getElementById("set-preview").style.display="block";
+    document.getElementById("set-preview-text").innerText=t;
+  }
+}
+window.saveSeting = function(){
+  seting.namaToko=document.getElementById("set-nama-toko").value.trim();
+  seting.kontak=document.getElementById("set-kontak").value.trim();
+  seting.rekening=document.getElementById("set-rekening").value.trim();
+  seting.footer=document.getElementById("set-footer").value.trim();
+  localStorage.setItem("nota-seting",JSON.stringify(seting));
+  updateSetingPreview();
+  showToast("✅ Pengaturan disimpan");
+};
+window.exportData = function(){
+  const blob=new Blob([JSON.stringify(allNotas,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download=`nota-export-${isoDate(new Date())}.json`; a.click();
+  showToast("📤 Data diekspor");
+};
+window.clearAllData = async function(){
+  if(!confirm("Hapus SEMUA data? Tindakan ini tidak bisa dibatalkan!")) return;
+  // delete all notas
+  for(const n of allNotas) await deleteDoc(doc(db,"NOTA",n.id));
+  showToast("🗑 Semua nota dihapus");
+};
+loadSeting();
 
-  let html=`<div style="background:white;padding:15px;font-size:13px;width:380px;font-family:Arial">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <img src="logo.png" style="width:60px;height:auto;">
-      <div><b style="font-size:16px;">Bakso Aselih Hills</b><br>
-      <span style="font-size:11px;">${now.toLocaleString()}</span></div>
-    </div><hr>
-    <div style="font-size:12px;margin-bottom:8px;"><b>Kepada Yth.</b><br>${customer}<br>${alamat}<br>${hp}</div><hr>
+// ===== SCREENSHOT =====
+window.screenshot = function(){
+  const total=items.reduce((a,b)=>a+b.total,0);
+  const now=new Date();
+  const customer=document.getElementById("customer").value||"-";
+  const alamat=document.getElementById("alamat").value||"-";
+  const hp=document.getElementById("hp").value||"-";
+  const namaToko=seting.namaToko||"Nota Penjualan";
+  const kontak=seting.kontak||"";
+  const rekening=seting.rekening||"";
+  const footer=seting.footer||"Terima kasih!";
+
+  let html=`<div style="background:white;padding:16px;font-size:13px;width:380px;font-family:Arial">
+    <div style="text-align:center;margin-bottom:12px">
+      <b style="font-size:16px">${namaToko}</b><br>
+      <span style="font-size:11px;color:#666">${kontak}</span><br>
+      <span style="font-size:11px;color:#888">${now.toLocaleString("id-ID")}</span>
+    </div>
+    <hr style="margin:8px 0">
+    <div style="font-size:12px;margin-bottom:8px"><b>Kepada Yth.</b><br>${customer}<br>${alamat}<br>${hp}</div>
+    <hr style="margin:8px 0">
     <table style="width:100%;font-size:12px;border-collapse:collapse;text-align:center">
-      <tr><th>No</th><th>Item</th><th>Qty</th><th>Harga</th><th>Total</th></tr>`;
-  items.forEach((i,idx)=>{
-    html+=`<tr><td>${idx+1}</td><td style="text-align:left">${i.nama}</td><td>${i.qty}</td><td>${rupiah(i.harga)}</td><td>${rupiah(i.total)}</td></tr>`;
+      <tr style="color:#666"><th>#</th><th style="text-align:left">Item</th><th>Qty</th><th>Harga</th><th>Total</th></tr>`;
+  items.forEach((it,idx)=>{
+    html+=`<tr><td>${idx+1}</td><td style="text-align:left">${it.nama}</td><td>${it.qty}</td><td>${rupiah(it.harga)}</td><td>${rupiah(it.total)}</td></tr>`;
   });
-  html+=`</table><hr>
-    <div style="font-size:12px;"><b>Total Qty: ${items.reduce((a,b)=>a+b.qty,0)}</b><br><b>Total: Rp ${rupiah(total)}</b></div><hr>
-    <div style="font-size:12px;"><b>Transfer:</b><br>BCA : 547-106-3666 a/n N O V I A N T I<br><br>
-    Harap mengirimkan foto bukti transfer kepada kami. Jazakumullah, have a blissful day! 💕<br><br><b>Contact:</b> 08974880348</div>
-    <center style="margin-top:10px;">***Terima kasih***</center></div>`;
+  html+=`</table>
+    <hr style="margin:8px 0">
+    <div style="font-size:12px"><b>Total Qty: ${items.reduce((a,b)=>a+b.qty,0)}</b><br><b style="font-size:14px">Total: Rp ${rupiah(total)}</b></div>
+    <hr style="margin:8px 0">
+    <div style="font-size:12px;white-space:pre-line">${rekening}</div>
+    <div style="text-align:center;margin-top:12px;font-size:12px;color:#555">${footer}</div>
+  </div>`;
 
   const div=document.createElement("div"); div.innerHTML=html; document.body.appendChild(div);
-  html2canvas(div,{useCORS:true}).then(c=>{ const a=document.createElement("a"); a.download="nota.png"; a.href=c.toDataURL(); a.click(); div.remove(); });
+  html2canvas(div,{useCORS:true}).then(c=>{
+    const a=document.createElement("a"); a.download="nota.png"; a.href=c.toDataURL(); a.click(); div.remove();
+  });
 };
+
+// ===== SEARCH INPUT on transaksi =====
+document.getElementById("trx-search").addEventListener("input", renderTrx);
 
 </script>
 </body>
